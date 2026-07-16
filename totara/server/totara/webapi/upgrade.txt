@@ -1,0 +1,14 @@
+This files describes API changes in the webapi plugin,
+information provided here is intended especially for developers.
+
+=== 15.0 ===
+
+* Introduced processor class, which is the base implementation of GraphQL StandardServer.
+* graphql::get_schema has a new optional parameter 'type'
+* server::prepare_schema has been deprecated.
+* server::prepare_operations has been deprecated.
+* server::create_operation has been deprecated.
+
+=== 13 ===
+
+* Introduced a new config flag $CFG->cache_graphql_schema to control caching of the schema. By default caching is on and can be turned off using the flag

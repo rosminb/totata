@@ -1,0 +1,49 @@
+"""
+Hierarchy framework interface
+"""
+interface totara_hierarchy_framework {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+}
+
+"""
+Hierarchy type interface
+"""
+interface totara_hierarchy_type {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+}
+
+"""
+Hierarchy item interface
+"""
+interface totara_hierarchy_item {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+  frameworkid: core_id
+  framework: totara_hierarchy_framework
+  path: String!
+  visible: Boolean!
+  parentid: core_id
+  parent: totara_hierarchy_item
+  children: [totara_hierarchy_item!]!
+  typeid: core_id
+  type: totara_hierarchy_type
+}
+
+"""
+Order direction options
+"""
+enum totara_hierarchy_order_dir {
+  ASC
+  DESC
+}

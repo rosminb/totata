@@ -1,0 +1,29 @@
+From 1030faf368372feb9605da09230a632ccb6f58b6 Mon Sep 17 00:00:00 2001
+From: Petr Skoda <petr.skoda@totaralearning.com>
+Date: Thu, 7 Jan 2021 13:08:12 +1300
+Subject: [PATCH] patch temp directory location
+
+---
+ .../phpspreadsheet/src/PhpSpreadsheet/Shared/File.php       | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/libraries/required/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/File.php b/libraries/required/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/File.php
+index 7525df8a6b9..c55c033adc6 100644
+--- a/libraries/required/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/File.php
++++ b/libraries/required/phpoffice/phpspreadsheet/src/PhpSpreadsheet/Shared/File.php
+@@ -109,6 +109,12 @@ class File
+      */
+     public static function sysGetTempDir()
+     {
++        // Totara hack!
++        if (function_exists('make_temp_directory')) {
++            $temp = make_temp_directory('phpspreadsheet');
++            return realpath(dirname($temp));
++        }
++
+         if (self::$useUploadTempDirectory) {
+             //  use upload-directory when defined to allow running on environments having very restricted
+             //      open_basedir configs
+-- 
+2.29.2
+

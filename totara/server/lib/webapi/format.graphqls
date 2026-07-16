@@ -1,0 +1,49 @@
+"""
+List of supported output formats for core_date scalar.
+
+The actual format used for userdate() is:
+get_string('strftime' . strtolower($arg['format']), 'langconfig')
+"""
+enum core_date_format {
+  """
+  Standard unix timestamp, 0 is replaced with null.
+  """
+  TIMESTAMP
+  """
+  ISO-8601 time string in current user timezone, null if no date.
+  """
+  ISO8601
+  DAYDATETIME
+  TIME
+  TIMESHORT
+  DATE
+  DATESHORT
+  DATELONG
+  DATETIME
+  DATETIMESHORT
+  DATETIMELONG
+  DATETIMESECONDS
+}
+
+"""
+Data output format, this is intended for texts that support multilang text syntax.
+"""
+enum core_format {
+  RAW
+  HTML
+  PLAIN
+  MARKDOWN
+  JSON_EDITOR
+  MOBILE
+}
+
+"""
+Acceptable notification states, as defined in lib/classes/output/notification.php
+note: message, problem and redirect are deprecated.
+"""
+enum core_notification_state {
+  success
+  info
+  warning
+  error
+}

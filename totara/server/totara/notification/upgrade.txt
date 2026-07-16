@@ -1,0 +1,26 @@
+This files describes API changes for code that uses the notification API,
+information provided here is intended especially for developers.
+
+
+=== 16.0 ===
+
+* The title of the notification grouping as displayed in the administration UI can now be overridden by adding a
+  language string with the key 'pluginname_totara_notification' to a component's language file. When this doesn't
+  exist, the fallback is still the language string with the key 'pluginname'. Both of these can be overridden for
+  specific notifications by implementing totara_notification\resolver\notifiable_event_resolver::get_plugin_name().
+
+--- Update to graphQL ---
+* Updated field 'title' scalar type 'param_text' to 'String' for mutation 'totara_notification_update_notification_preference' and 'totara_notification_create_notification_preference'
+
+=== 14.4 ===
+
+* Deprecated totara_notification\local\helper::is_resolver_enabled - this function isn't needed and isn't returning
+  the correct value when no preference record is found.
+* Deprecated totara_notification\local\helper::is_resolver_enabled_for_all_parent_contexts - use
+  is_resolver_disabled_by_any_context instead, and pass in the parent context of your target context if you want
+  to know explicitly whether an ancestor is causing the target to be disabled.
+
+=== 14.1 ===
+
+* Deprecated the function single_emptiable_placeholder::get_representation_string_for_empty - all empty placeholder
+  values are now automatically replaced with the 'no_available_data_for_key' string when they are used.

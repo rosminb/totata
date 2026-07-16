@@ -1,0 +1,6 @@
+#!/bin/bash
+
+script_path="$( cd "$(dirname "$0")" ; pwd -P )"
+project_path="$( cd $script_path && cd ..; pwd -P )"
+
+$script_path/tdocker build "$@"

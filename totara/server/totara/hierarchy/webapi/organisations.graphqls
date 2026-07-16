@@ -1,0 +1,103 @@
+"""
+Organisation framework
+
+The query is responsible for ensuring the user can see the organisation framework
+"""
+type totara_hierarchy_organisation_framework implements totara_hierarchy_framework {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+}
+
+"""
+Organisation type
+
+The query is responsible for ensuring the user can see the organisation type
+"""
+type totara_hierarchy_organisation_type implements totara_hierarchy_type {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+}
+
+"""
+Organisation
+
+The query is responsible for ensuring the user can see the organisation.
+"""
+type totara_hierarchy_organisation implements totara_hierarchy_item {
+  id: core_id!
+  fullname(format: core_format = PLAIN): String!
+  idnumber: String
+  shortname(format: core_format = PLAIN): String
+  description(format: core_format = HTML): String
+  frameworkid: core_id
+  framework: totara_hierarchy_organisation_framework
+  path: String!
+  visible: Boolean!
+  parentid: core_id
+  parent: totara_hierarchy_organisation
+  children: [totara_hierarchy_organisation!]!
+  typeid: core_id
+  type: totara_hierarchy_organisation_type
+}
+
+"""
+Organisation result
+
+Result type for a collection of organisations.
+"""
+type totara_hierarchy_organisation_result implements core_pageable_result {
+  items: [totara_hierarchy_organisation!]!
+  total: Int!
+  next_cursor: String!
+}
+
+"""
+Organisation filter
+
+Properties to filter out organisations.
+"""
+input totara_hierarchy_organisation_filter {
+  framework_id: param_integer
+  parent_id: param_integer
+  ids: [param_integer!]
+  name: param_text
+  type_id: param_integer
+}
+
+"""
+Input type for organisation query conditions.
+
+Properties to control the order and amount of the requested organisations.
+"""
+input totara_hierarchy_organisation_query {
+  filters: totara_hierarchy_organisation_filter
+  order_by: String
+  order_dir: totara_hierarchy_order_dir
+  result_size: param_integer
+  cursor: String
+}
+
+extend type Query {
+  """
+  Query to retrieve organisation frameworks.
+  """
+  totara_hierarchy_organisation_frameworks: [totara_hierarchy_organisation_framework!]!
+
+  """
+  Query to retrieve organisation types.
+  """
+  totara_hierarchy_organisation_types: [totara_hierarchy_organisation_type!]!
+
+  """
+  Query to retrieve organisations.
+  """
+  totara_hierarchy_organisations(
+    query: totara_hierarchy_organisation_query
+  ): totara_hierarchy_organisation_result!
+}

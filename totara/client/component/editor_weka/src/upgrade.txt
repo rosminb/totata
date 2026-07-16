@@ -1,0 +1,49 @@
+This files describes API changes in /client/component/editor_weka,
+information provided here is intended especially for developers.
+
+=== 16.6 ===
+
+* Updated focus styles in ToolbarButton.vue
+  * CSS changes
+
+=== 16.2 ===
+
+* Added 'fake' blinking cursor to the prosemirror gapcursor block in Weka.vue
+  * SCSS changes
+
+=== 16.0 ===
+
+* Updated Weka.vue to have focus styling
+  * Template and SCSS changes
+* Added open_in_new_window setting in EditLinkModal, Link and link_block
+  * Template changes
+* Disallowed closing EditLinkModal and EditImageAltTextModal via backdrop click
+  * Template changes
+
+=== 14.0 ===
+
+* Suggestion.showList() fourth parameter had been deprecated and no longer used, please update all calls.
+* Function Suggestion.resetComponent() had been deprecated and no longer used, please update all calls.
+* Suggestion.apply() fourth parameter had been deprecated and no longer used, please update all calls.
+* Updates in Weka.vue:
+  * Deprecated optional prop "instanceId"
+  * Deprecated optional prop "component"
+  * Deprecated optional prop "area"
+  * Added new optional prop "compact"
+  * Added new optional prop "usageIdentifier"
+  * Added new optional prop "variantName"
+  * Data attribute "toolbarEnabled" had been deprecated in favour of prop "compact"
+  * The function getCurrentFiles had been deprecated and no longer used.
+    The behaviour of this function had also been changed. Please updated all calls.
+  * The function getRepositoryData had been deprecated and no longer used.
+    The behaviour of this function had also been changed. Please update all calls.
+
+* Added new optional prop "instanceId" for component User.vue
+* Added new optional prop "contextId" for component Weka.vue
+* Updated AudioBlock.vue to move NodeBar.vue inside tui AudioBlock.vue slot
+  * Template changes
+* Added new addAltButton for component ImageBlock.vue
+* Added caption button in VideoBlock.vue
+  * Template and CSS changes
+* Added transcript button in AudioBlock.vue
+  * Template and CSS changes

@@ -1,0 +1,84 @@
+From 6f8ae9a52c43fb8869ff6319f5fcc6adb2f9c300 Mon Sep 17 00:00:00 2001
+From: Simon Chester <s@scq.me>
+Date: Thu, 7 Jan 2021 11:59:13 +1300
+Subject: [PATCH] Fix comments being omitted in the middle of a rule
+
+Also fixes comments between CSSLists.
+---
+ .../lib/Sabberworm/CSS/CSSList/CSSList.php             |  2 +-
+ .../lib/Sabberworm/CSS/Parsing/ParserState.php         |  5 ++++-
+ .../php-css-parser/lib/Sabberworm/CSS/Rule/Rule.php    |  2 +-
+ .../php-css-parser/tests/Sabberworm/CSS/ParserTest.php | 10 ++++++++++
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
+index bdef920ee8f..c31f3070624 100644
+--- a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
++++ b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
+@@ -61,7 +61,7 @@ abstract class CSSList implements Renderable, Commentable {
+ 				$oListItem->setComments($comments);
+ 				$oList->append($oListItem);
+ 			}
+-			$oParserState->consumeWhiteSpace();
++			$oParserState->consumeWhiteSpace(false);
+ 		}
+ 		if(!$bIsRoot && !$bLenientParsing) {
+ 			throw new SourceException("Unexpected end of document", $oParserState->currentLine());
+diff --git a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Parsing/ParserState.php b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Parsing/ParserState.php
+index 4305c9a0073..6398815a429 100644
+--- a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Parsing/ParserState.php
++++ b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Parsing/ParserState.php
+@@ -107,12 +107,15 @@ class ParserState {
+ 		return null;
+ 	}
+ 
+-	public function consumeWhiteSpace() {
++	public function consumeWhiteSpace($consumeComments = true) {
+ 		$comments = array();
+ 		do {
+ 			while (preg_match('/\\s/isSu', $this->peek()) === 1) {
+ 				$this->consume(1);
+ 			}
++			if (!$consumeComments) {
++				return;
++			}
+ 			if($this->oParserSettings->bLenientParsing) {
+ 				try {
+ 					$oComment = $this->consumeComment();
+diff --git a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Rule/Rule.php b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Rule/Rule.php
+index 3fa031bd639..f019dea7d89 100644
+--- a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Rule/Rule.php
++++ b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/Rule/Rule.php
+@@ -56,7 +56,7 @@ class Rule implements Renderable, Commentable {
+ 		while ($oParserState->comes(';')) {
+ 			$oParserState->consume(';');
+ 		}
+-		$oParserState->consumeWhiteSpace();
++		$oParserState->consumeWhiteSpace(false);
+ 
+ 		return $oRule;
+ 	}
+diff --git a/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/ParserTest.php b/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/ParserTest.php
+index 020905c375d..e72b47c01fc 100644
+--- a/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/ParserTest.php
++++ b/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/ParserTest.php
+@@ -690,6 +690,16 @@ body {background-url: url("http://somesite.com/images/someimage.gif");}';
+ 		$this->assertEquals("Find Me!", $comments[0]->getComment());
+ 	}
+ 
++    function testInnerCommentExtracting() {
++		$parser = new Parser('div {left:10px;/*Find Me!*/text-align:left;}');
++		$doc = $parser->parse();
++		$contents = $doc->getContents();
++		$divRules = $contents[0]->getRules();
++		$comments = $divRules[1]->getComments();
++		$this->assertCount(1, $comments);
++		$this->assertEquals("Find Me!", $comments[0]->getComment());
++    }
++
+ 	function testTopLevelCommentExtracting() {
+ 		$parser = new Parser('/*Find Me!*/div {left:10px; text-align:left;}');
+ 		$doc = $parser->parse();
+-- 
+2.29.2
+

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Standard boilerplate code for getting the paths and environment variables we need.
+script_path="$( cd "$(dirname "$0")" ; pwd -P )"
+project_path="$( cd $script_path && cd ..; pwd -P )"
+set -a; source "$project_path/.env"; set +a
+sub_path="${PWD//$LOCAL_SRC/}"
+local_path="$LOCAL_SRC/$sub_path"
+
+containers=("$@")
+if [ -z $containers ]; then
+    if [ -z $DEFAULT_CONTAINERS ]; then
+        echo "DEFAULT_CONTAINERS is not set in your docker-dev .env file, so at least one container must be specified"
+        exit 1
+    fi
+    containers=(${DEFAULT_CONTAINERS//,/ })
+fi
+
+containers_to_start=()
+for container in "${containers[@]}"; do
+    if [[ "$container" == "php" ]]; then
+        if [[ ! -f "$local_path/version.php" ]]; then
+            echo "tup must be run from a Totara site directory if the 'php' container is specified"
+            exit 1
+        fi
+        php_container=($(php "$project_path/bin/helpers/php_container.php" "$local_path"))
+        containers_to_start+=(${php_container[0]})
+    else
+        containers_to_start+=("$container")
+    fi
+done
+
+# Always start up the sync container for mutagen
+if [[ "$USE_MUTAGEN" == "1" || -f "$project_path/.use-mutagen" ]]; then
+    containers_to_start+=("sync")
+fi
+
+$script_path/tdocker up --remove-orphans -d "${containers_to_start[@]}"
+
+# if mutagen should be used make sure it's started
+if [[ "$USE_MUTAGEN" == "1" || -f "$project_path/.use-mutagen" ]]; then
+    # check if there's already a session
+    mutagen sync list | grep "$REMOTE_SRC" &> /dev/null
+
+    if [ $? != 0 ]; then
+        mutagen sync create \
+            -c $project_path/mutagen.yml \
+            -n totara \
+            $LOCAL_SRC docker://totara_sync$REMOTE_SRC
+    else
+        mutagen sync resume totara
+    fi
+fi

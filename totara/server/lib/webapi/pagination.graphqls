@@ -1,0 +1,25 @@
+"""
+Represents a paginaeble result returning a next cursor containing the information needed to load the next page
+"""
+interface core_pageable_result {
+  total: Int!
+  next_cursor: String!
+}
+"""
+Contains pagination information needed to load the next page
+GraphQL doesn't allow input types to implement interfaces - thus input to cover all
+"""
+input core_pagination_input {
+  """
+  Next cursor
+  """
+  cursor: String
+  """
+  Number of items to return
+  """
+  limit: param_integer
+  """
+  Page number - only used by offset-based cursors
+  """
+  page: param_integer
+}

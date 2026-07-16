@@ -1,0 +1,133 @@
+"""
+User information.
+
+NOTE: for privacy reasons the query is responsible of filtering only users that are allowed to be seen
+"""
+type core_user {
+  id: core_id!
+  idnumber: String
+  username(format: core_format = PLAIN): String
+  fullname(format: core_format = PLAIN): String!
+  firstname(format: core_format = PLAIN): String
+  lastname(format: core_format = PLAIN): String
+  middlename(format: core_format = PLAIN): String
+  alternatename(format: core_format = PLAIN): String
+  email: String
+  address(format: core_format = PLAIN): String
+  phone1(format: core_format = PLAIN): String
+  phone2(format: core_format = PLAIN): String
+  department(format: core_format = PLAIN): String
+  institution(format: core_format = PLAIN): String
+  city(format: core_format = PLAIN): String
+  country: String
+  description(format: core_format = HTML): String
+  descriptionformat: core_format
+  profileimageurl: String
+  profileimageurlsmall: String
+  profileimagealt(format: core_format = PLAIN): String
+  lang: String
+  theme: String
+  suspended: Boolean
+  timezone: String
+  interests: Boolean
+  firstaccess(format: core_date_format = TIMESTAMP): core_date
+  lastaccess(format: core_date_format = TIMESTAMP): core_date
+  url(format: core_format = PLAIN): String
+  skype(format: core_format = PLAIN): String
+  card_display: core_user_card_display!
+  # TODO add custom profile fields
+}
+
+"""
+Type to store the information related on how to display field of users.
+"""
+type core_user_card_display_field {
+  """
+  The value of the field that we are trying to display to the viewer.
+  """
+  value(format: core_format = PLAIN): String
+  """
+  Associate url field, if it is null then there is no associate url field with the value field.
+  If there is then the value should be displayed as a link.
+  """
+  associate_url: String
+  """
+  Label string for the field.
+  """
+  label: String
+  """
+  Whether it is a custom field or not.
+  """
+  is_custom: Boolean!
+}
+
+"""
+Metadata type for configuring the display user information component.
+"""
+type core_user_card_display {
+  """
+  Local url to point to the user's avatar, if this is null, then the viewer will definitely not able to view
+  the profile picture.
+  """
+  profile_picture_url: String
+  profile_picture_alt: String
+  """
+  Profile url can be null if the viewer cannot view the target user's profile.
+  """
+  profile_url: String
+  display_fields: [core_user_card_display_field!]!
+}
+
+"""
+User list sort order.
+"""
+enum core_users_order_dir {
+  ASC
+  DESC
+}
+
+"""
+User list query result.
+"""
+type core_users_result implements core_pageable_result {
+  items: [core_user!]!
+  total: Int!
+  next_cursor: String!
+}
+
+"""
+Filters for querying users.
+"""
+input core_users_filter {
+  """
+  Filters users by their record ids
+  """
+  ids: [param_integer!]
+  """
+  Filters users by full names
+  """
+  name: param_text
+}
+
+"""
+input type for querying users.
+"""
+input core_users_query {
+  filters: core_users_filter
+  order_by: String
+  order_dir: core_users_order_dir
+  result_size: param_integer
+  cursor: String
+}
+
+extend type Query {
+  """
+  Return a users own profile information
+  """
+  core_user_own_profile: core_user!
+
+  """
+  Return filtered list of users in the system.
+  """
+  core_users(query: core_users_query): core_users_result!
+}

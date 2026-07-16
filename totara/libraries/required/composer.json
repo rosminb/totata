@@ -1,0 +1,63 @@
+{
+  "name": "totara/totara_require",
+  "description": "Required libraries used in production",
+  "type": "metapackage",
+  "homepage": "https://www.totaralearning.com",
+  "require": {
+    "php": ">=7.3.4 <8.1",
+    "symfony/polyfill-php80": "1.22.1",
+    "symfony/polyfill-php74": "1.22.1",
+    "ezyang/htmlpurifier": "4.13.0",
+    "phpmailer/phpmailer": "6.5.1",
+    "webonyx/graphql-php" : "v14.11.3",
+    "box/spout" : "3.3.0",
+    "simplepie/simplepie" : "1.5.6",
+    "dompdf/dompdf" : "1.0.2",
+    "sabberworm/php-css-parser" : "8.3.1",
+    "phpoffice/phpspreadsheet" : "1.19.0",
+    "opis/json-schema": "1.1.0",
+    "adodb/adodb-php": "5.21.2",
+    "michelf/php-markdown": "1.9.0",
+    "nyholm/psr7": "1.4.1",
+    "lcobucci/jwt": "dev-totara-4.1.5 as 4.1.5",
+    "league/oauth2-server": "8.3.2",
+    "matthiasmullie/minify": "1.3.63",
+    "geoip2/geoip2": "2.11.0",
+    "totara/xhprof": "dev-totara-2.3.5",
+    "goat1000/svggraph": "dev-totara-2.30.0",
+    "setasign/fpdi": "dev-totara-1.6.2",
+    "wikimedia/less.php": "3.1.0",
+    "scssphp/scssphp": "dev-totara-1.0.5",
+    "phpseclib/phpseclib": "2.0.35"
+  },
+  "repositories": [
+    {
+      "_info": "Fork of lcobucci/jwt and lcobucci/clock required in order to simultanously support PHP 7.3 and 8.0",
+      "type": "vcs",
+      "url": "https://github.com/totara/jwt"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/totara/xhprof"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/totara/SVGGraph"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/totara/FPDI"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/totara/scssphp"
+    }
+  ],
+  "replace": {
+    "lcobucci/clock": "*"
+  },
+  "config": {
+    "vendor-dir": "./",
+    "optimize-autoloader": true
+  }
+}

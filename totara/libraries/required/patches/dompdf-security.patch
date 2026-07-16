@@ -1,0 +1,37 @@
+From 907bbad4e0fd758285c070ddaaeb17c628343775 Mon Sep 17 00:00:00 2001
+From: Petr Skoda <petr.skoda@totaralearning.com>
+Date: Thu, 7 Jan 2021 09:57:05 +1300
+Subject: [PATCH] TL-29209 dompdf: security patch
+
+---
+ libraries/required/dompdf/dompdf/src/Helpers.php | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/libraries/required/dompdf/dompdf/src/Helpers.php b/libraries/required/dompdf/dompdf/src/Helpers.php
+index f28508c11a8..dab748af837 100644
+--- a/libraries/required/dompdf/dompdf/src/Helpers.php
++++ b/libraries/required/dompdf/dompdf/src/Helpers.php
+@@ -852,6 +852,20 @@ class Helpers
+      */
+     public static function getFileContent($uri, $context = null, $offset = 0, $maxlen = null)
+     {
++        // Totara: this must be safe, so allow built-in dompdf resources and pluginfile images only!
++        global $CFG;
++        $resourcepath = DIRECTORY_SEPARATOR.'dompdf'.DIRECTORY_SEPARATOR.'dompdf'.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'res'.DIRECTORY_SEPARATOR;
++        if (is_file($uri) && strpos(realpath($uri), $resourcepath) !== false) {
++            $data = file_get_contents($uri);
++            if ($offset > 0) {
++                $data = substr($data, $offset);
++            }
++            return array($data, array());
++        }
++        if (strpos($uri, $CFG->wwwroot.'/pluginfile.php') !== 0) {
++            return array(false, null);
++        }
++
+         $content = null;
+         $headers = null;
+         [$proto, $host, $path, $file] = Helpers::explode_url($uri);
+-- 
+2.29.2
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+script_path="$( cd "$(dirname "$0")" ; pwd -P )"
+
+if [ ! -f "$local_path/version.php" ]; then
+    remote_path="$REMOTE_SRC"
+fi
+
+# If the container isn't specified, then we just default to the default php container.
+container="$1"
+if [[ -z "$container" ]]; then
+    container="php"
+fi
+
+$script_path/texec "$container" /bin/bash

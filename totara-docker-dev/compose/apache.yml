@@ -1,0 +1,97 @@
+services:
+
+  apache:
+    image: httpd:2.4
+    container_name: totara_apache
+    restart: ${RESTART_POLICY:-no}
+    entrypoint: ["/totara-entrypoint.sh"]
+    environment:
+      - TZ=${TIME_ZONE}
+      - REMOTE_DATA
+      - REMOTE_SRC
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443" # ngrok only
+    volumes:
+      - ./apache/entrypoint.sh:/totara-entrypoint.sh
+      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./apache/conf.d/local-server.conf:/usr/local/apache2/conf.d/local-server.conf
+      - ./apache/conf.d/remote-server.conf:/usr/local/apache2/conf.d/remote-server.conf
+      - ./apache/conf.d/server.conf:/tmp/server.conf
+      - ${LOCAL_SRC}:${REMOTE_SRC}
+      - totara-data:${REMOTE_DATA}
+    depends_on:
+      - maildev
+    networks:
+      totara:
+        aliases:
+          - totara55
+          - totara55.debug
+          - totara55.behat
+          - totara55.behat.debug
+          - totara55.behat.totaralms.com
+          - totara56
+          - totara56.debug
+          - totara56.behat
+          - totara56.behat.debug
+          - totara56.behat.totaralms.com
+          - totara70
+          - totara70.debug
+          - totara70.behat
+          - totara70.behat.debug
+          - totara70.behat.totaralms.com
+          - totara71
+          - totara71.debug
+          - totara71.behat
+          - totara71.behat.debug
+          - totara71.behat.totaralms.com
+          - totara72
+          - totara72.debug
+          - totara72.behat
+          - totara72.behat.debug
+          - totara72.behat.totaralms.com
+          - totara73
+          - totara73.debug
+          - totara73.behat
+          - totara73.behat.debug
+          - totara73.behat.totaralms.com
+          - totara74
+          - totara74.debug
+          - totara74.behat
+          - totara74.behat.debug
+          - totara74.behat.totaralms.com
+          - totara80
+          - totara80.debug
+          - totara80.behat
+          - totara80.behat.debug
+          - totara80.behat.totaralms.com
+          - totara81
+          - totara81.debug
+          - totara81.behat
+          - totara81.behat.debug
+          - totara81.behat.totaralms.com
+          - totara82
+          - totara82.debug
+          - totara82.behat
+          - totara82.behat.debug
+          - totara82.behat.totaralms.com
+          - totara83
+          - totara83.debug
+          - totara83.behat
+          - totara83.behat.debug
+          - totara83.behat.totaralms.com
+          - totara84
+          - totara84.debug
+          - totara84.behat
+          - totara84.behat.debug
+          - totara84.behat.totaralms.com
+          - totara85
+          - totara85.debug
+          - totara85.behat
+          - totara85.behat.debug
+          - totara85.behat.totaralms.com
+
+
+volumes:
+  totara-data:

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+script_path="$( cd "$(dirname "$0")" ; pwd -P )"
+
+container=$1; shift
+number=$1; shift
+
+$script_path/tdocker up -d --scale $container=$number $container

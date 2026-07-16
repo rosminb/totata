@@ -1,0 +1,209 @@
+x-healthcheck-template: &mariadb-healthcheck
+  healthcheck:
+    test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
+x-healthcheck-template-legacy: &mariadb-healthcheck-legacy
+  healthcheck:
+    test: ["CMD-SHELL", "mysqladmin -u root -p$$MYSQL_ROOT_PASSWORD ping -h 127.0.0.1 2>/dev/null"]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
+services:
+
+  mariadb1108:
+    <<: *mariadb-healthcheck
+    image: mariadb:11.8
+    container_name: totara_mariadb1108
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3317:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb1108-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb1104:
+    <<: *mariadb-healthcheck
+    image: mariadb:11.4
+    container_name: totara_mariadb1104
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3316:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb1104-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb1011:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.11
+    container_name: totara_mariadb1011
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3315:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb1011-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb108:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.8
+    container_name: totara_mariadb108
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3312:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb108-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb107:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.7
+    container_name: totara_mariadb107
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3311:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb107-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb106:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.6
+    container_name: totara_mariadb106
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3310:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb106-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb105:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.5
+    container_name: totara_mariadb105
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3307:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb104:
+    <<: *mariadb-healthcheck
+    image: mariadb:10.4
+    container_name: totara_mariadb104
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3309:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb104-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb103:
+    <<: *mariadb-healthcheck-legacy
+    image: mariadb:10.3
+    container_name: totara_mariadb103
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3305:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb103-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  mariadb102:
+    <<: *mariadb-healthcheck-legacy
+    image: mariadb:10.2
+    container_name: totara_mariadb102
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "3302:3306"
+    environment:
+      TZ: ${TIME_ZONE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PW}
+    volumes:
+      - mariadb102-data:/var/lib/mysql
+      - ./mariadb:/etc/mysql/conf.d
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+volumes:
+  mariadb-data:
+  mariadb1108-data:
+  mariadb1104-data:
+  mariadb1011-data:
+  mariadb108-data:
+  mariadb107-data:
+  mariadb106-data:
+  mariadb104-data:
+  mariadb103-data:
+  mariadb102-data:

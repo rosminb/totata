@@ -1,0 +1,252 @@
+x-healthcheck-template: &postgres-healthcheck
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
+services:
+
+  pgsql93:
+    <<: *postgres-healthcheck
+    image: postgres:9.3-alpine
+    container_name: totara_pgsql93
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5493:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql93-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql96:
+    <<: *postgres-healthcheck
+    image: postgres:9.6-alpine
+    container_name: totara_pgsql96
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5496:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql96-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql10:
+    <<: *postgres-healthcheck
+    image: postgres:10-alpine
+    container_name: totara_pgsql10
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5410:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql10-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql11:
+    <<: *postgres-healthcheck
+    image: postgres:11-alpine
+    container_name: totara_pgsql11
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5411:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql11-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql12:
+    <<: *postgres-healthcheck
+    image: postgres:12-alpine
+    container_name: totara_pgsql12
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5432:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql12-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql13:
+    <<: *postgres-healthcheck
+    image: postgres:13-alpine
+    container_name: totara_pgsql13
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5442:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql13-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql14:
+    <<: *postgres-healthcheck
+    image: postgres:14-alpine
+    container_name: totara_pgsql14
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5443:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf' -c 'enable_memoize=off'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql14-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql15:
+    <<: *postgres-healthcheck
+    image: postgres:15-alpine
+    container_name: totara_pgsql15
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5444:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql15-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql16:
+    <<: *postgres-healthcheck
+    image: postgres:16-alpine
+    container_name: totara_pgsql16
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5445:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql16-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+    
+  pgsql17:
+    <<: *postgres-healthcheck
+    image: postgres:17-alpine
+    container_name: totara_pgsql17
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5446:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql17-data:/var/lib/postgresql/data
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+  pgsql18:
+    <<: *postgres-healthcheck
+    image: postgres:18-alpine
+    container_name: totara_pgsql18
+    restart: ${RESTART_POLICY:-no}
+    ports:
+      - "5447:5432"
+    environment:
+      TZ: ${TIME_ZONE}
+      PGDATA: /var/lib/postgresql/docker/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command:
+      postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    volumes:
+      - ./pgsql/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - pgsql18-data:/var/lib/postgresql/docker
+    depends_on:
+      - nginx
+    networks:
+      - totara
+
+volumes:
+  pgsql93-data:
+  pgsql96-data:
+  pgsql10-data:
+  pgsql11-data:
+  pgsql12-data:
+  pgsql13-data:
+  pgsql14-data:
+  pgsql15-data:
+  pgsql16-data:
+  pgsql17-data:
+  pgsql18-data:

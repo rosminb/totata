@@ -1,0 +1,19 @@
+This files describes API changes in /admin/tool/* - plugins,
+information provided here is intended especially for developers.
+
+See http://docs.moodle.org/dev/Admin_tools for more details and explanation.
+
+=== 16.1 ===
+
+* Added policy visibility ('applies_to') to policyversion records, and updated \tool_sitepolicy_renderer::manage_site_policy_table()
+ and \tool_sitepolicy_renderer::manage_version_policy_table() to include the new column
+
+=== 16.0 ===
+
+=== 15.0 ===
+
+=== 14.0 ===
+
+=== 13.0 ===
+
+* Removed no longer required tool_assignmentupgrade plugin

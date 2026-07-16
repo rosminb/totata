@@ -1,0 +1,12 @@
+This files describes API changes for code that uses the notification API,
+information provided here is intended especially for developers.
+
+=== 16.0 ===
+
+--- Update to graphQL ---
+* Changed name field  format to 'PLAIN' for 'totara_oauth2_client_provider' type
+
+=== 15.3 ===
+
+* Changed field 'client_provider_id' type to int and length to 10 on 'totara_oauth2_access_token' table.
+* Changed foreign key 'client_probider_id_fk' to 'client_provider_id_fk' and added 'cascade' property to it.

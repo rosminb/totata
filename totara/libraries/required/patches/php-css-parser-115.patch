@@ -1,0 +1,87 @@
+From cd9bdc8bc60137baa7cf9ed3f27aa32f02f807df Mon Sep 17 00:00:00 2001
+From: Frederic Massart <fred@moodle.com>
+Date: Thu, 7 Jan 2021 11:54:18 +1300
+Subject: [PATCH] Support for inserting an item in a CSSList
+
+---
+ .../lib/Sabberworm/CSS/CSSList/CSSList.php    | 14 ++++++++
+ .../Sabberworm/CSS/CSSList/DocumentTest.php   | 33 +++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
+index d883df82460..bdef920ee8f 100644
+--- a/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
++++ b/libraries/required/sabberworm/php-css-parser/lib/Sabberworm/CSS/CSSList/CSSList.php
+@@ -212,6 +212,20 @@ abstract class CSSList implements Renderable, Commentable {
+ 		array_splice($this->aContents, $iOffset, $iLength, $mReplacement);
+ 	}
+ 
++	/**
++	 * Insert an item before its sibling.
++	 *
++	 * @param mixed $oItem The item.
++	 * @param mixed $oSibling The sibling.
++	 */
++	public function insert($oItem, $oSibling) {
++		$iIndex = array_search($oSibling, $this->aContents);
++		if ($iIndex === false) {
++			return $this->append($oItem);
++		}
++		array_splice($this->aContents, $iIndex, 0, array($oItem));
++	}
++
+ 	/**
+ 	 * Removes an item from the CSS list.
+ 	 * @param RuleSet|Import|Charset|CSSList $oItemToRemove May be a RuleSet (most likely a DeclarationBlock), a Import, a Charset or another CSSList (most likely a MediaQuery)
+diff --git a/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/CSSList/DocumentTest.php b/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/CSSList/DocumentTest.php
+index 003958097a5..ea388f9f511 100644
+--- a/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/CSSList/DocumentTest.php
++++ b/libraries/required/sabberworm/php-css-parser/tests/Sabberworm/CSS/CSSList/DocumentTest.php
+@@ -2,6 +2,7 @@
+ 
+ namespace Sabberworm\CSS\CSSList;
+ 
++use Sabberworm\CSS\RuleSet\DeclarationBlock;
+ use Sabberworm\CSS\Parser;
+ 
+ class DocumentTest extends \PHPUnit_Framework_TestCase {
+@@ -23,4 +24,36 @@ class DocumentTest extends \PHPUnit_Framework_TestCase {
+ 		$this->assertCount(2, $aFinalContents);
+ 	}
+ 
++	public function testInsertContent() {
++		$sCss = '.thing { left: 10px; } .stuff { margin: 1px; } ';
++		$oParser = new Parser($sCss);
++		$oDoc = $oParser->parse();
++		$aContents = $oDoc->getContents();
++		$this->assertCount(2, $aContents);
++
++		$oThing = $aContents[0];
++		$oStuff = $aContents[1];
++
++		$oFirst = new DeclarationBlock();
++		$oFirst->setSelectors('.first');
++		$oBetween = new DeclarationBlock();
++		$oBetween->setSelectors('.between');
++		$oOrphan = new DeclarationBlock();
++		$oOrphan->setSelectors('.forever-alone');
++		$oNotFound = new DeclarationBlock();
++		$oNotFound->setSelectors('.not-found');
++
++		$oDoc->insert($oFirst, $oThing);
++		$oDoc->insert($oBetween, $oStuff);
++		$oDoc->insert($oOrphan, $oNotFound);
++
++		$aContents = $oDoc->getContents();
++		$this->assertCount(5, $aContents);
++		$this->assertSame($oFirst, $aContents[0]);
++		$this->assertSame($oThing, $aContents[1]);
++		$this->assertSame($oBetween, $aContents[2]);
++		$this->assertSame($oStuff, $aContents[3]);
++		$this->assertSame($oOrphan, $aContents[4]);
++	}
++
+ }
+-- 
+2.29.2
+

@@ -1,0 +1,16 @@
+{
+    "name": "totaraenterprise-es6-transpile",
+    "private": true,
+    "description": "Builds ES6 transpiled bundles using defined dependencies.",
+    "scripts": {
+        "main": "webpack --config webpack.es6_features.js && webpack --config webpack.esnext_features.js"
+    },
+    "devDependencies": {
+        "core-js": "3.19.1",
+        "webpack": "4.46.0",
+        "webpack-cli": "3.3.12"
+    },
+    "engines": {
+        "node": ">=12"
+    }
+}
