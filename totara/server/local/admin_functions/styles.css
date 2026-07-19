@@ -1,0 +1,411 @@
+/**
+ * Modern Clean UI Styles for local_admin_functions plugin.
+ * Base font-size updated to 14px.
+ * Enabled smooth horizontal scrolling for wide database tables.
+ */
+
+/* Page Header Bar */
+.page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header-title {
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px !important;
+}
+
+.page-header-subtitle {
+    font-size: 14px !important;
+    color: #94a3b8 !important;
+    margin-bottom: 0 !important;
+}
+
+.btn-add-new {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2) !important;
+}
+
+.btn-add-new:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: #ffffff !important;
+}
+
+/* Admin-Only Debug Mode Toggle Switch */
+.admin-debug-toggle-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+}
+
+.admin-debug-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0;
+}
+
+.admin-debug-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    margin-bottom: 0;
+}
+
+.admin-debug-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.admin-debug-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px;
+}
+
+.admin-debug-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.admin-debug-switch input:checked + .admin-debug-slider {
+    background-color: #dc2626;
+}
+
+.admin-debug-switch input:checked + .admin-debug-slider:before {
+    transform: translateX(20px);
+}
+
+/* Single-Line Horizontal Filter Bar */
+.filter-bar-single {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.75rem;
+}
+
+.filter-bar-single .search-box {
+    position: relative;
+    min-width: 220px;
+    flex: 1;
+}
+
+.filter-bar-single .search-box input {
+    padding-left: 2.3rem !important;
+    padding-right: 1rem !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    width: 100% !important;
+}
+
+.filter-bar-single .search-box i {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.filter-bar-single .filter-select {
+    height: 42px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    font-size: 14px !important;
+    color: #475569 !important;
+    padding: 0 2.25rem 0 0.9rem !important;
+    min-width: 150px;
+}
+
+.filter-bar-single .btn-filter-action {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    height: 42px !important;
+    padding: 0 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 14px !important;
+}
+
+.filter-bar-single .btn-reset-action {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    height: 42px !important;
+    padding: 0 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    font-size: 14px !important;
+}
+
+.filter-bar-single .btn-reset-action:hover {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+/* Tab Navigation Styling */
+.admin-nav-tabs {
+    border-bottom: 1px solid #e2e8f0 !important;
+    gap: 6px;
+    margin-bottom: 1.5rem !important;
+}
+
+.admin-nav-tabs .nav-link {
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1.25rem !important;
+    font-size: 14px !important;
+    transition: all 0.15s ease-in-out !important;
+    border-radius: 6px 6px 0 0 !important;
+    background: transparent !important;
+}
+
+.admin-nav-tabs .nav-link:hover {
+    color: #2563eb !important;
+    background: #f8fafc !important;
+}
+
+.admin-nav-tabs .nav-link.active {
+    color: #2563eb !important;
+    border-bottom: 2px solid #2563eb !important;
+    background: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Modern Clean Table & Horizontal Scroll Engine */
+.clean-table-container {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    max-width: 100% !important;
+}
+
+.clean-table {
+    min-width: 100% !important;
+    width: max-content !important;
+    border-collapse: collapse !important;
+    margin-bottom: 0 !important;
+    font-size: 14px !important;
+}
+
+#db-tables-list {
+    width: 100% !important;
+}
+
+.clean-table thead th {
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
+    padding: 0.9rem 1.1rem !important;
+    font-size: 14px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    white-space: nowrap !important;
+}
+
+.clean-table tbody tr {
+    border-bottom: 1px solid #f1f5f9 !important;
+    transition: background-color 0.15s ease-in-out !important;
+}
+
+.clean-table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+
+.clean-table tbody td {
+    padding: 0.95rem 1.1rem !important;
+    vertical-align: middle !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+}
+
+/* Status Pill Badges */
+.badge-pill-active {
+    background-color: #dcfce7 !important;
+    color: #166534 !important;
+    font-weight: 700 !important;
+    border-radius: 9999px !important;
+    padding: 0.25rem 0.85rem !important;
+    font-size: 12px !important;
+    display: inline-block !important;
+}
+
+.badge-pill-inactive {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+    font-weight: 700 !important;
+    border-radius: 9999px !important;
+    padding: 0.25rem 0.85rem !important;
+    font-size: 12px !important;
+    display: inline-block !important;
+}
+
+/* Action Eye Icon */
+.btn-action-icon {
+    color: #64748b !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 15px !important;
+    padding: 4px 8px !important;
+    transition: color 0.15s ease !important;
+}
+
+.btn-action-icon:hover {
+    color: #2563eb !important;
+}
+
+/* Option 1 Record Details View */
+.view-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.view-card-clean {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
+    overflow: hidden;
+}
+
+.inspector-details-table-clean {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px !important;
+}
+
+.inspector-details-table-clean tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.inspector-details-table-clean tr:last-child {
+    border-bottom: none;
+}
+
+.inspector-details-table-clean td {
+    padding: 1.1rem 1.75rem !important;
+    vertical-align: top !important;
+    font-size: 14px !important;
+}
+
+.inspector-details-table-clean td.inspector-key {
+    width: 220px;
+    font-weight: 600;
+    color: #64748b;
+    font-size: 14px !important;
+    background-color: #ffffff !important;
+}
+
+.inspector-details-table-clean td.inspector-val {
+    color: #0f172a;
+    font-size: 14px !important;
+    background-color: #ffffff !important;
+    line-height: 1.5;
+}
+
+.back-link-clean {
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 14px !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.back-link-clean:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Pagination Bar Overrides */
+.pagination {
+    margin-top: 0 !important;
+    gap: 6px !important;
+}
+
+.pagination .page-item .page-link {
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 0 !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+}
+
+.pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #2563eb !important;
+}
+
+/* SQL Error Detail Box */
+.font-size-14 { font-size: 14px !important; }
+.font-size-13 { font-size: 13px !important; }
+.font-size-12 { font-size: 12px !important; }
