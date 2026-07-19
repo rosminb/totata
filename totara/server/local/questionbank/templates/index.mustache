@@ -1,0 +1,80 @@
+{{!
+    This file is part of local_questionbank plugin.
+}}
+<div class="path-local-questionbank">
+    {{#hascategory}}
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+            <a href="{{addurl}}" class="btn btn-primary">{{#str}}addquestion, local_questionbank{{/str}}</a>
+            <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtolist, local_questionbank{{/str}}</a>
+        </div>
+
+        <h2 class="main">{{questionslistheading}}</h2>
+
+        {{#hasquestions}}
+            <table class="table table-striped table-bordered table-hover" style="background-color: #fff;">
+                <thead>
+                    <tr>
+                        <th style="width: 60px; text-align: center; vertical-align: middle;">ID</th>
+                        <th style="vertical-align: middle;">Type</th>
+                        <th style="vertical-align: middle;">Question Name</th>
+                        <th style="vertical-align: middle;">Question Text</th>
+                        <th style="vertical-align: middle;">Answers</th>
+                        <th style="width: 150px; text-align: center; vertical-align: middle;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#questions}}
+                        <tr>
+                            <td style="text-align: center; vertical-align: middle; font-weight: bold;">{{id}}</td>
+                            <td style="vertical-align: middle; text-align: center;">
+                                <span class="label label-{{typeclass}}">{{typename}}</span>
+                            </td>
+                            <td style="vertical-align: middle; font-weight: 500;">{{name}}</td>
+                            <td style="vertical-align: middle;">{{{questiontext}}}</td>
+                            <td style="vertical-align: middle;">
+                                {{#hasanswers}}
+                                    <ul style="list-style-type: none; padding-left: 0; margin-bottom: 0;">
+                                        {{#answers}}
+                                            <li style="padding: 6px 10px; border-radius: 4px; background-color: #fafafa; border: 1px solid #ddd; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; {{#iscorrect}}border-color: #5cb85c; background-color: #f2f9f2;{{/iscorrect}}">
+                                                <div style="flex-grow: 1;">{{{answertext}}}</div>
+                                                {{#iscorrect}}
+                                                    <span class="label label-success" style="color: white; background-color: #5cb85c; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">{{#str}}correct, local_questionbank{{/str}}</span>
+                                                {{/iscorrect}}
+                                            </li>
+                                        {{/answers}}
+                                    </ul>
+                                {{/hasanswers}}
+                                {{^hasanswers}}
+                                    <span class="text-muted" style="font-size: 11px;">No Answers</span>
+                                {{/hasanswers}}
+                            </td>
+                            <td style="text-align: center; vertical-align: middle; white-space: nowrap;">
+                                <a href="{{editurl}}" class="btn btn-sm btn-secondary" style="margin-right: 5px; padding: 4px 8px; font-size: 11px;">Edit</a>
+                                <a href="{{deleteurl}}" class="btn btn-sm btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="return confirm('Are you sure you want to delete this question?');">Delete</a>
+                            </td>
+                        </tr>
+                    {{/questions}}
+                </tbody>
+            </table>
+        {{/hasquestions}}
+        {{^hasquestions}}
+            <div class="alert alert-info">
+                {{#str}}noquestions, local_questionbank{{/str}}
+            </div>
+        {{/hasquestions}}
+    {{/hascategory}}
+
+    {{^hascategory}}
+        <h2>{{#str}}viewquestions, local_questionbank{{/str}}</h2>
+        <div class="card p-4 bg-light mb-3" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background-color: #f8fafc; margin-bottom: 20px;">
+            <form action="index.php" method="get" style="display: flex; gap: 10px; align-items: center;">
+                <label for="categoryid" style="font-weight: bold; margin: 0;">{{#str}}categoryid, local_questionbank{{/str}}: </label>
+                <input type="number" name="categoryid" id="categoryid" required="required" class="form-control" style="width: 150px;" />
+                <input type="submit" value="{{#str}}viewquestions, local_questionbank{{/str}}" class="btn btn-primary" />
+            </form>
+        </div>
+        <div style="margin-top: 20px;">
+            <a href="{{addurl}}" class="btn btn-secondary">{{#str}}addquestion, local_questionbank{{/str}}</a>
+        </div>
+    {{/hascategory}}
+</div>
