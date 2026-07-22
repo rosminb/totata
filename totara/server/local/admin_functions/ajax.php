@@ -178,8 +178,9 @@ try {
         $wherestr = implode(' AND ', $where);
 
         if ($viewmode === 'group') {
-            // Grouped View: Count by eventname strictly.
-            $groupsql = "SELECT l.eventname,
+            // Grouped View: Count by eventname strictly. First column MUST be unique id for Moodle get_records_sql.
+            $groupsql = "SELECT MIN(l.id) AS id,
+                                l.eventname,
                                 MAX(l.component) AS component,
                                 MAX(l.crud) AS crud,
                                 MAX(l.target) AS target,
@@ -191,7 +192,13 @@ try {
                        GROUP BY l.eventname
                        ORDER BY total_count DESC, latest_time DESC";
 
-            $groups = $DB->get_records_sql($groupsql, $params);
+            try {
+                $groups = $DB->get_records_sql($groupsql, $params);
+            } catch (\Exception $e) {
+                echo json_encode(array('success' => false, 'error' => 'Group query failed: ' . $e->getMessage()));
+                exit;
+            }
+
             $total_groups = count($groups);
 
             ob_start();
