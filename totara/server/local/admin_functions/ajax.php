@@ -178,14 +178,17 @@ try {
         $wherestr = implode(' AND ', $where);
 
         if ($viewmode === 'group') {
-            // Grouped View: Count by eventname and component.
-            $groupsql = "SELECT l.eventname, l.component, l.crud, l.target,
+            // Grouped View: Count by eventname strictly.
+            $groupsql = "SELECT l.eventname,
+                                MAX(l.component) AS component,
+                                MAX(l.crud) AS crud,
+                                MAX(l.target) AS target,
                                 COUNT(*) AS total_count,
                                 MAX(l.timecreated) AS latest_time
                            FROM {logstore_standard_log} l
                       LEFT JOIN {user} u ON u.id = l.userid
                           WHERE {$wherestr}
-                       GROUP BY l.eventname, l.component, l.crud, l.target
+                       GROUP BY l.eventname
                        ORDER BY total_count DESC, latest_time DESC";
 
             $groups = $DB->get_records_sql($groupsql, $params);
