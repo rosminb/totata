@@ -464,6 +464,8 @@
     max-width: calc(100% - 24px) !important;
     padding-left: 0 !important;
     margin-bottom: 0 !important;
+    word-break: break-all !important;
+    min-width: 0 !important;
 }
 
 /* Remove Bootstrap's ::before / ::after pseudo-elements (the custom checkbox box) */

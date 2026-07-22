@@ -719,7 +719,7 @@ $is_admin_user = is_siteadmin();
      aria-labelledby="tableSelectorModalLabel" aria-modal="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
-            <div class="modal-header bg-primary text-white py-3">
+            <div class="modal-header py-3" style="background: #475569; font-size: 14px;">
                 <h5 class="modal-title font-weight-bold d-flex align-items-center text-white mb-0" id="tableSelectorModalLabel">
                     <i class="fa fa-th-list mr-2"></i> Select Custom Tables to List
                 </h5>
@@ -746,7 +746,7 @@ $is_admin_user = is_siteadmin();
                 </div>
 
                 <!-- Scrollable Checkbox List -->
-                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto;" id="ts-checkbox-container">
+                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto; overflow-x: hidden;" id="ts-checkbox-container">
                     <div class="row">
                         <?php foreach ($db_all_tables as $tbl):
                             $is_checked = in_array($tbl, $custom_tables_list);
