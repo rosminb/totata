@@ -16,7 +16,7 @@ local_admin_functions_apply_debug_settings();
 // Force user login — superadmin only.
 require_login();
 if (!is_siteadmin()) {
-    print_error('accessdenied', 'admin');
+    local_admin_functions_access_denied();
 }
 $context = context_system::instance();
 
