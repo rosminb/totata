@@ -193,7 +193,7 @@ try {
 
             ob_start();
             if (empty($groups)) {
-                echo '<tr><td colspan="6" class="text-center py-5 text-muted font-italic">No log events match your active search filters.</td></tr>';
+                echo '<tr><td colspan="7" class="text-center py-5 text-muted font-italic">No log events match your active search filters.</td></tr>';
             } else {
                 $idx = 1;
                 foreach ($groups as $g) {
@@ -211,6 +211,9 @@ try {
                     echo '<td><span class="' . $badge_class . '">' . s($crud_letter) . '</span></td>';
                     echo '<td><span class="badge badge-primary font-weight-bold p-2" style="font-size: 13px;">' . number_format($g->total_count) . ' events</span></td>';
                     echo '<td class="text-secondary small">' . date('d M Y, h:i:s A', $g->latest_time) . '</td>';
+                    echo '<td class="text-center">';
+                    echo '<button type="button" class="btn-action-icon btn-view-group-events" data-event-name="' . s($g->eventname) . '" data-component="' . s($g->component) . '" title="View List of These Events"><i class="fa fa-eye"></i></button>';
+                    echo '</td>';
                     echo '</tr>';
                 }
             }

@@ -370,8 +370,26 @@ require(['jquery'], function($) {
         \$(this).addClass('active');
         \$('#btn-view-list').removeClass('active');
         currentLogViewMode = 'group';
-        \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 40%\">Event Description</th><th style=\"width: 20%\">Component</th><th style=\"width: 10%\">CRUD</th><th style=\"width: 15%\">Total Count</th><th style=\"width: 10%\">Latest Activity</th>');
+        \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 35%\">Event Description</th><th style=\"width: 18%\">Component</th><th style=\"width: 8%\">CRUD</th><th style=\"width: 14%\">Total Count</th><th style=\"width: 15%\">Latest Activity</th><th style=\"width: 5%\" class=\"text-center\">View</th>');
         fetchLogs(1);
+    });
+
+    \$(document).on('click', '.btn-view-group-events', function(e) {
+        e.preventDefault();
+        var eventName = \$(this).data('event-name') || '';
+        var component = \$(this).data('component') || '';
+
+        \$('#log-search-input').val(eventName);
+        if (component) {
+            \$('#log-component-select').val(component);
+        }
+
+        \$('#btn-view-list').addClass('active');
+        \$('#btn-view-group').removeClass('active');
+        currentLogViewMode = 'list';
+        \$('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
+
+        fetchLogs(1, true);
     });
 
     \$(document).on('click', '#logs-pagination-container a', function(e) {
