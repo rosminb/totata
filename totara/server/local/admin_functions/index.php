@@ -39,9 +39,8 @@ $PAGE->set_context($context);
 $PAGE->set_title(get_string('pluginname', 'local_admin_functions'));
 $PAGE->set_heading(get_string('pluginname', 'local_admin_functions'));
 
-// Add CSS and JS requirements.
+// Add CSS requirement only (JS injected inline to avoid Totara deferred-load conflicts).
 $PAGE->requires->css(new moodle_url('/local/admin_functions/styles.css'));
-$PAGE->requires->js(new moodle_url('/local/admin_functions/assets/js/admin_functions.js'));
 
 echo $OUTPUT->header();
 
@@ -529,6 +528,323 @@ $is_admin_user = is_siteadmin() || has_capability('moodle/site:config', $context
 </div>
 <div class="modal-backdrop fade" id="ts-modal-backdrop" style="display: none;"></div>
 <?php endif; ?>
+
+<?php
+// Inject JS inline to guarantee it runs after DOM is fully ready,
+// bypassing Totara's deferred AMD module loading system.
+$ajax_url = (new moodle_url('/local/admin_functions/ajax.php'))->out(false);
+?>
+<script type="text/javascript">
+(function() {
+    'use strict';
+
+    var ajaxUrl = '<?php echo $ajax_url; ?>';
+
+    function ready(fn) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fn);
+        } else {
+            fn();
+        }
+    }
+
+    ready(function() {
+
+        // === 1. Admin Debug Confirmation Modal ===
+        var debugToggle   = document.getElementById('btn-toggle-admin-debug');
+        var debugModal    = document.getElementById('debug-confirm-modal');
+        var debugBackdrop = document.getElementById('debug-modal-backdrop');
+        var modalMessage  = document.getElementById('debug-modal-message');
+        var btnConfirm    = document.getElementById('modal-btn-confirm');
+        var btnCancel     = document.getElementById('modal-btn-cancel');
+        var btnCloseX     = document.getElementById('modal-close-x');
+        var targetDebugState = false;
+
+        function openDebugModal(enable) {
+            targetDebugState = enable;
+            if (modalMessage) {
+                modalMessage.innerHTML = enable
+                    ? 'Are you sure you want to <strong>ENABLE Developer Debug Mode</strong> and show all PHP error messages, notices, and stack traces?'
+                    : 'Are you sure you want to <strong>DISABLE Debug Mode</strong> and suppress error displays?';
+            }
+            if (btnConfirm) {
+                btnConfirm.className = enable ? 'btn btn-danger px-4 font-weight-bold' : 'btn btn-primary px-4 font-weight-bold';
+                btnConfirm.innerHTML = enable ? '<i class="fa fa-check mr-1"></i> Enable All Errors' : '<i class="fa fa-check mr-1"></i> Disable Debug';
+            }
+            if (debugModal)    { debugModal.style.display = 'block';    debugModal.classList.add('show'); }
+            if (debugBackdrop) { debugBackdrop.style.display = 'block'; debugBackdrop.classList.add('show'); }
+        }
+
+        function closeDebugModal(revertToggle) {
+            if (debugModal)    { debugModal.style.display = 'none';    debugModal.classList.remove('show'); }
+            if (debugBackdrop) { debugBackdrop.style.display = 'none'; debugBackdrop.classList.remove('show'); }
+            if (revertToggle && debugToggle) { debugToggle.checked = !targetDebugState; }
+        }
+
+        if (debugToggle) {
+            debugToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                var willEnable = !this.checked;
+                this.checked = !willEnable;
+                openDebugModal(willEnable);
+            });
+        }
+        if (btnCancel) btnCancel.addEventListener('click', function() { closeDebugModal(true); });
+        if (btnCloseX) btnCloseX.addEventListener('click', function() { closeDebugModal(true); });
+        if (btnConfirm) {
+            btnConfirm.addEventListener('click', function() {
+                btnConfirm.disabled = true;
+                fetch(ajaxUrl + '?action=toggle_debug')
+                    .then(function(res) { return res.json(); })
+                    .then(function(res) {
+                        btnConfirm.disabled = false;
+                        if (res.success) {
+                            if (debugToggle) debugToggle.checked = !!res.debug;
+                            closeDebugModal(false);
+                            window.location.reload();
+                        } else {
+                            alert(res.error || 'Failed to update Debug Mode.');
+                            closeDebugModal(true);
+                        }
+                    })
+                    .catch(function(err) {
+                        btnConfirm.disabled = false;
+                        console.error('Debug toggle error:', err);
+                        closeDebugModal(true);
+                    });
+            });
+        }
+
+        // === 2. Super Admin Table Selector Modal ===
+        var tsModal    = document.getElementById('table-selector-modal');
+        var tsBackdrop = document.getElementById('ts-modal-backdrop');
+        var tsCloseX   = document.getElementById('ts-modal-close-x');
+        var tsCancel   = document.getElementById('ts-modal-btn-cancel');
+        var tsSave     = document.getElementById('ts-modal-btn-save');
+        var tsSearch   = document.getElementById('ts-modal-search');
+        var tsSelectCustomOnly = document.getElementById('ts-select-custom-only');
+        var tsSelectAll   = document.getElementById('ts-select-all');
+        var tsDeselectAll = document.getElementById('ts-deselect-all');
+        var tsCountBadge  = document.getElementById('ts-selected-count-badge');
+
+        // Wire up the open button directly (not via delegation)
+        var openBtn = document.getElementById('btn-open-table-selector');
+        if (openBtn) {
+            openBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openTsModal();
+            });
+        }
+
+        function openTsModal() {
+            if (tsModal)    { tsModal.style.display = 'block';    tsModal.classList.add('show'); }
+            if (tsBackdrop) { tsBackdrop.style.display = 'block'; tsBackdrop.classList.add('show'); }
+            updateTsCount();
+        }
+
+        function closeTsModal() {
+            if (tsModal)    { tsModal.style.display = 'none';    tsModal.classList.remove('show'); }
+            if (tsBackdrop) { tsBackdrop.style.display = 'none'; tsBackdrop.classList.remove('show'); }
+        }
+
+        function updateTsCount() {
+            var total   = document.querySelectorAll('.ts-table-checkbox').length;
+            var checked = document.querySelectorAll('.ts-table-checkbox:checked').length;
+            if (tsCountBadge) {
+                tsCountBadge.innerHTML = 'Selected: <strong>' + checked + '</strong> of ' + total + ' tables';
+            }
+        }
+
+        if (tsCloseX)   tsCloseX.addEventListener('click', closeTsModal);
+        if (tsCancel)   tsCancel.addEventListener('click', closeTsModal);
+        if (tsBackdrop) tsBackdrop.addEventListener('click', closeTsModal);
+
+        if (tsSearch) {
+            tsSearch.addEventListener('input', function() {
+                var q = this.value.toLowerCase().trim();
+                document.querySelectorAll('.ts-table-item').forEach(function(item) {
+                    var name = (item.getAttribute('data-table-name') || '').toLowerCase();
+                    item.style.display = (q === '' || name.indexOf(q) !== -1) ? 'block' : 'none';
+                });
+            });
+        }
+
+        if (tsSelectCustomOnly) {
+            tsSelectCustomOnly.addEventListener('click', function() {
+                document.querySelectorAll('.ts-table-item').forEach(function(item) {
+                    var chk = item.querySelector('.ts-table-checkbox');
+                    if (chk) chk.checked = (item.getAttribute('data-is-custom') === '1');
+                });
+                updateTsCount();
+            });
+        }
+
+        if (tsSelectAll) {
+            tsSelectAll.addEventListener('click', function() {
+                document.querySelectorAll('.ts-table-checkbox').forEach(function(chk) { chk.checked = true; });
+                updateTsCount();
+            });
+        }
+
+        if (tsDeselectAll) {
+            tsDeselectAll.addEventListener('click', function() {
+                document.querySelectorAll('.ts-table-checkbox').forEach(function(chk) { chk.checked = false; });
+                updateTsCount();
+            });
+        }
+
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('ts-table-checkbox')) {
+                updateTsCount();
+            }
+        });
+
+        if (tsSave) {
+            tsSave.addEventListener('click', function() {
+                var selected = [];
+                document.querySelectorAll('.ts-table-checkbox:checked').forEach(function(chk) {
+                    selected.push(chk.value);
+                });
+                tsSave.disabled = true;
+                tsSave.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Saving...';
+
+                var formData = new FormData();
+                formData.append('action', 'save_custom_tables');
+                formData.append('tables', JSON.stringify(selected));
+
+                fetch(ajaxUrl, { method: 'POST', body: formData })
+                    .then(function(res) { return res.json(); })
+                    .then(function(res) {
+                        tsSave.disabled = false;
+                        tsSave.innerHTML = '<i class="fa fa-save mr-1"></i> Save Selected Tables';
+                        if (res.success) {
+                            closeTsModal();
+                            window.location.reload();
+                        } else {
+                            alert(res.error || 'Failed to save table selection.');
+                        }
+                    })
+                    .catch(function(err) {
+                        tsSave.disabled = false;
+                        tsSave.innerHTML = '<i class="fa fa-save mr-1"></i> Save Selected Tables';
+                        console.error('Save tables error:', err);
+                        alert('An error occurred while saving table selection.');
+                    });
+            });
+        }
+
+        // === 3. Tables List AJAX ===
+        var appLevel1 = document.getElementById('admin-functions-tables-app');
+        if (appLevel1) {
+            var tbody1      = document.querySelector('#db-tables-list tbody');
+            var summary1    = document.getElementById('tables-summary-container');
+            var pagination1 = document.getElementById('tables-pagination-container');
+            var filterForm1 = document.querySelector('.filter-bar-single');
+            var searchTimeout = null;
+
+            function fetchTablesList(page) {
+                if (!tbody1) return;
+                var searchInput   = document.getElementById('table-search-input');
+                var statusSelect  = document.querySelector('select[name="status_filter"]');
+                var scopeSelect   = document.getElementById('table-scope-select');
+                var search        = searchInput ? searchInput.value.trim() : '';
+                var status_filter = statusSelect ? statusSelect.value : '';
+                var scope         = scopeSelect ? scopeSelect.value : 'custom';
+
+                tbody1.style.opacity = '0.4';
+
+                var params = new URLSearchParams({
+                    action: 'fetch_tables', search: search,
+                    status_filter: status_filter, scope: scope, page: page || 1
+                });
+
+                fetch(ajaxUrl + '?' + params.toString())
+                    .then(function(res) { return res.json(); })
+                    .then(function(res) {
+                        tbody1.style.opacity = '1';
+                        if (res.success) {
+                            tbody1.innerHTML = res.html;
+                            if (summary1) summary1.textContent = res.summary;
+                            if (pagination1) pagination1.innerHTML = res.pagination;
+                        }
+                    })
+                    .catch(function(err) {
+                        tbody1.style.opacity = '1';
+                        console.error('AJAX Fetch Tables Error:', err);
+                    });
+            }
+
+            var searchInput = document.getElementById('table-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function() { fetchTablesList(1); }, 300);
+                });
+            }
+
+            if (filterForm1) {
+                filterForm1.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    fetchTablesList(1);
+                });
+                filterForm1.querySelectorAll('select').forEach(function(sel) {
+                    sel.addEventListener('change', function() {
+                        if (this.name !== 'table_select') fetchTablesList(1);
+                    });
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('#tables-pagination-container .paging a');
+                if (link) {
+                    e.preventDefault();
+                    var href = link.getAttribute('href');
+                    if (href) {
+                        var match = href.match(/page=(\d+)/);
+                        fetchTablesList(match ? match[1] : 1);
+                    }
+                }
+            });
+        }
+
+        // === 4. SQL Runner ===
+        var sqlForm = document.getElementById('sql-runner-form');
+        var sqlResultsContainer = document.getElementById('sql-results-container');
+        if (sqlForm && sqlResultsContainer) {
+            sqlForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var sqlTextarea = document.getElementById('sql-input-textarea');
+                var sqlVal = sqlTextarea ? sqlTextarea.value.trim() : '';
+                if (!sqlVal) return;
+
+                sqlResultsContainer.style.opacity = '0.4';
+                var formData = new FormData();
+                formData.append('action', 'run_sql');
+                formData.append('sql', sqlVal);
+
+                fetch(ajaxUrl, { method: 'POST', body: formData })
+                    .then(function(res) { return res.json(); })
+                    .then(function(res) {
+                        sqlResultsContainer.style.opacity = '1';
+                        if (res.success) {
+                            sqlResultsContainer.innerHTML = res.html;
+                        } else if (res.error_html) {
+                            sqlResultsContainer.innerHTML = res.error_html;
+                        } else {
+                            sqlResultsContainer.innerHTML = '<div class="alert alert-danger m-3">' + (res.error || 'SQL Execution Failed.') + '</div>';
+                        }
+                    })
+                    .catch(function(err) {
+                        sqlResultsContainer.style.opacity = '1';
+                        console.error('SQL Runner Error:', err);
+                    });
+            });
+        }
+
+    }); // end ready()
+
+})();
+</script>
 
 <?php
 echo $OUTPUT->footer();
