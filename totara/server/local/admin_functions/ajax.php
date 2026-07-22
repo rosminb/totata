@@ -199,32 +199,41 @@ try {
                        ORDER BY total_count DESC, latest_time DESC";
 
             try {
-                $groups = $DB->get_records_sql($groupsql, $params);
+                $groups_all = array_values($DB->get_records_sql($groupsql, $params));
             } catch (\Exception $e) {
                 echo json_encode(array('success' => false, 'error' => 'Group query failed: ' . $e->getMessage()));
                 exit;
             }
 
-            $total_groups = count($groups);
+            $total_groups = count($groups_all);
+            $totalpages = max(1, (int) ceil($total_groups / $perpage));
+            if ($page < 1) $page = 1;
+            else if ($page > $totalpages) $page = $totalpages;
+
+            $offset = ($page - 1) * $perpage;
+            $groups = array_slice($groups_all, $offset, $perpage);
+
+            $start_index = ($total_groups > 0) ? ($offset + 1) : 0;
+            $end_index = min($offset + count($groups), $total_groups);
 
             ob_start();
             if (empty($groups)) {
                 echo '<tr><td colspan="7" class="text-center py-5 text-muted font-italic">No log events match your active search filters.</td></tr>';
             } else {
-                $idx = 1;
+                $idx = $offset + 1;
                 foreach ($groups as $g) {
                     $human_title = local_admin_functions_human_event_name($g->eventname, $g->target, '', $g->component);
                     $crud_letter = strtoupper($g->crud);
                     $badge_class = 'badge-crud-' . strtolower($g->crud);
                     
                     echo '<tr>';
-                    echo '<td class="font-weight-semibold text-muted">' . $idx++ . '</td>';
+                    echo '<td class="font-weight-bold text-secondary mono-cell">#' . $idx++ . '</td>';
                     echo '<td>';
-                    echo '<div class="font-weight-bold text-dark">' . s($human_title) . '</div>';
+                    echo '<div class="font-weight-bold text-dark" style="font-size: 13.5px;">' . s($human_title) . '</div>';
                     echo '<div class="small text-muted font-monospace">' . s($g->eventname) . '</div>';
                     echo '</td>';
                     echo '<td><span class="badge badge-light border text-secondary font-weight-normal">' . s($g->component) . '</span></td>';
-                    echo '<td><span class="' . $badge_class . '">' . s($crud_letter) . '</span></td>';
+                    echo '<td class="text-center"><span class="' . $badge_class . '">' . s($crud_letter) . '</span></td>';
                     echo '<td><span class="badge badge-primary font-weight-bold p-2" style="font-size: 13px;">' . number_format($g->total_count) . ' events</span></td>';
                     echo '<td class="text-secondary small">' . date('d M Y, h:i:s A', $g->latest_time) . '</td>';
                     echo '<td class="text-center">';
@@ -235,11 +244,29 @@ try {
             }
             $rows_html = ob_get_clean();
 
+            ob_start();
+            if ($total_groups > 0) {
+                $baseurl = new moodle_url('/local/admin_functions/index.php', array(
+                    'tab' => 'logs',
+                    'search' => $search,
+                    'crud' => $crud,
+                    'component' => $comp_flt,
+                    'fromdate' => $fromdate,
+                    'todate' => $todate,
+                    'userfilter' => $userfilter,
+                    'viewmode' => 'group'
+                ));
+                echo $OUTPUT->paging_bar($total_groups, $page, $perpage, $baseurl);
+            }
+            $pagination_html = ob_get_clean();
+
+            $summary_text = ($total_groups > 0) ? "Showing {$start_index} to {$end_index} of " . number_format($total_groups) . " event categories" : "Showing 0 event categories";
+
             echo json_encode(array(
                 'success' => true,
                 'html' => $rows_html,
-                'summary' => "Grouped into " . number_format($total_groups) . " event categories",
-                'pagination' => '',
+                'summary' => $summary_text,
+                'pagination' => $pagination_html,
                 'total' => $total_groups
             ));
             exit;
