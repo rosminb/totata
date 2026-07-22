@@ -107,18 +107,24 @@ try {
         exit;
 
     } else if ($action === 'fetch_logs') {
-        $search     = optional_param('search', '', PARAM_TEXT);
-        $crud       = optional_param('crud', '', PARAM_ALPHA);
-        $comp_flt   = optional_param('component', '', PARAM_ALPHAEXT);
-        $fromdate   = optional_param('fromdate', '', PARAM_TEXT);
-        $todate     = optional_param('todate', '', PARAM_TEXT);
-        $userfilter = optional_param('userfilter', '', PARAM_TEXT);
-        $viewmode   = optional_param('viewmode', 'list', PARAM_ALPHA);
-        $page       = optional_param('page', 1, PARAM_INT);
-        $perpage    = 100;
+        $search      = optional_param('search', '', PARAM_TEXT);
+        $crud        = optional_param('crud', '', PARAM_ALPHA);
+        $comp_flt    = optional_param('component', '', PARAM_ALPHAEXT);
+        $fromdate    = optional_param('fromdate', '', PARAM_TEXT);
+        $todate      = optional_param('todate', '', PARAM_TEXT);
+        $userfilter  = optional_param('userfilter', '', PARAM_TEXT);
+        $eventfilter = optional_param('eventfilter', '', PARAM_RAW);
+        $viewmode    = optional_param('viewmode', 'list', PARAM_ALPHA);
+        $page        = optional_param('page', 1, PARAM_INT);
+        $perpage     = 100;
 
         $where = array("1=1");
         $params = array();
+
+        if ($eventfilter !== '') {
+            $where[] = "l.eventname = :evtfilter";
+            $params['evtfilter'] = $eventfilter;
+        }
 
         if ($search !== '') {
             $where[] = "(l.eventname " . $DB->sql_like('l.eventname', ':s1', false) . "

@@ -281,6 +281,7 @@ require(['jquery'], function($) {
     var logSearchTimeout = null;
     var currentLogViewMode = 'list';
     var currentLogPage = 1;
+    var currentEventFilter = '';
 
     function fetchLogs(page, scroll) {
         var tbodyLogs = document.querySelector('#db-logs-list tbody');
@@ -303,6 +304,7 @@ require(['jquery'], function($) {
             component: comp,
             fromdate: fromDate,
             todate: toDate,
+            eventfilter: currentEventFilter,
             viewmode: currentLogViewMode,
             page: currentLogPage
         });
@@ -337,6 +339,7 @@ require(['jquery'], function($) {
     }
 
     \$('#log-search-input').on('input', function() {
+        currentEventFilter = '';
         clearTimeout(logSearchTimeout);
         logSearchTimeout = setTimeout(function() { fetchLogs(1); }, 350);
     });
@@ -350,6 +353,7 @@ require(['jquery'], function($) {
     });
 
     \$('#btn-reset-log-filters').on('click', function() {
+        currentEventFilter = '';
         \$('#log-search-input').val('');
         \$('#log-crud-select').val('');
         \$('#log-component-select').val('');
@@ -370,6 +374,7 @@ require(['jquery'], function($) {
         \$(this).addClass('active');
         \$('#btn-view-list').removeClass('active');
         currentLogViewMode = 'group';
+        currentEventFilter = '';
         \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 35%\">Event Description</th><th style=\"width: 18%\">Component</th><th style=\"width: 8%\">CRUD</th><th style=\"width: 14%\">Total Count</th><th style=\"width: 15%\">Latest Activity</th><th style=\"width: 5%\" class=\"text-center\">View</th>');
         fetchLogs(1);
     });
@@ -379,7 +384,8 @@ require(['jquery'], function($) {
         var eventName = \$(this).data('event-name') || '';
         var component = \$(this).data('component') || '';
 
-        \$('#log-search-input').val(eventName);
+        currentEventFilter = eventName;
+        \$('#log-search-input').val('');
         if (component) {
             \$('#log-component-select').val(component);
         }
