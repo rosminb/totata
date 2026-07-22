@@ -719,11 +719,11 @@ $is_admin_user = is_siteadmin();
      aria-labelledby="tableSelectorModalLabel" aria-modal="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
-            <div class="modal-header py-3" style="background: #475569; font-size: 14px;">
-                <h5 class="modal-title font-weight-bold d-flex align-items-center text-white mb-0" id="tableSelectorModalLabel">
-                    <i class="fa fa-th-list mr-2"></i> Select Custom Tables to List
+            <div class="modal-header" style="background: #ffffff; font-size: 14px; padding: 10px 16px; min-height: unset; border-bottom: 1px solid #e2e8f0;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="tableSelectorModalLabel" style="font-size: 14px; color: #0f172a;">
+                    <i class="fa fa-th-list mr-2 text-primary"></i> Select Custom Tables to List
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #64748b; opacity: 1; font-size: 18px;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
