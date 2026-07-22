@@ -283,13 +283,13 @@ require(['jquery'], function($) {
         var tbodyLogs = document.querySelector('#db-logs-list tbody');
         if (!tbodyLogs) return;
 
-        var search   = $('#log-search-input').val().trim();
-        var crud     = $('#log-crud-select').val() || '';
-        var comp     = $('#log-component-select').val() || '';
-        var fromDate = $('#log-from-date').val() || '';
-        var toDate   = $('#log-to-date').val() || '';
+        var search   = \$('#log-search-input').val().trim();
+        var crud     = \$('#log-crud-select').val() || '';
+        var comp     = \$('#log-component-select').val() || '';
+        var fromDate = \$('#log-from-date').val() || '';
+        var toDate   = \$('#log-to-date').val() || '';
 
-        $(tbodyLogs).css('opacity', '0.4');
+        \$(tbodyLogs).css('opacity', '0.4');
 
         var params = new URLSearchParams({
             action: 'fetch_logs',
@@ -305,7 +305,7 @@ require(['jquery'], function($) {
         fetch(ajaxUrl + '?' + params.toString())
             .then(function(res) { return res.json(); })
             .then(function(res) {
-                $(tbodyLogs).css('opacity', '1');
+                \$(tbodyLogs).css('opacity', '1');
                 if (res.success) {
                     tbodyLogs.innerHTML = res.html;
                     var summaryLogs = document.getElementById('logs-summary-container');
@@ -315,93 +315,93 @@ require(['jquery'], function($) {
                 }
             })
             .catch(function(err) {
-                $(tbodyLogs).css('opacity', '1');
+                \$(tbodyLogs).css('opacity', '1');
                 console.error('AJAX Fetch Logs Error:', err);
             });
     }
 
-    if ($('#logs-explorer-pane').is(':visible') || window.location.search.indexOf('tab=logs') !== -1) {
+    if (\$('#logs-explorer-pane').is(':visible') || window.location.search.indexOf('tab=logs') !== -1) {
         fetchLogs(1);
     }
 
-    $('#log-search-input').on('input', function() {
+    \$('#log-search-input').on('input', function() {
         clearTimeout(logSearchTimeout);
         logSearchTimeout = setTimeout(function() { fetchLogs(1); }, 350);
     });
 
-    $('#log-crud-select, #log-component-select, #log-from-date, #log-to-date').on('change', function() {
+    \$('#log-crud-select, #log-component-select, #log-from-date, #log-to-date').on('change', function() {
         fetchLogs(1);
     });
 
-    $('#btn-apply-log-filters').on('click', function() {
+    \$('#btn-apply-log-filters').on('click', function() {
         fetchLogs(1);
     });
 
-    $('#btn-reset-log-filters').on('click', function() {
-        $('#log-search-input').val('');
-        $('#log-crud-select').val('');
-        $('#log-component-select').val('');
-        $('#log-from-date').val('');
-        $('#log-to-date').val('');
+    \$('#btn-reset-log-filters').on('click', function() {
+        \$('#log-search-input').val('');
+        \$('#log-crud-select').val('');
+        \$('#log-component-select').val('');
+        \$('#log-from-date').val('');
+        \$('#log-to-date').val('');
         fetchLogs(1);
     });
 
-    $('#btn-view-list').on('click', function() {
-        $(this).addClass('active');
-        $('#btn-view-group').removeClass('active');
+    \$('#btn-view-list').on('click', function() {
+        \$(this).addClass('active');
+        \$('#btn-view-group').removeClass('active');
         currentLogViewMode = 'list';
-        $('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
+        \$('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
         fetchLogs(1);
     });
 
-    $('#btn-view-group').on('click', function() {
-        $(this).addClass('active');
-        $('#btn-view-list').removeClass('active');
+    \$('#btn-view-group').on('click', function() {
+        \$(this).addClass('active');
+        \$('#btn-view-list').removeClass('active');
         currentLogViewMode = 'group';
-        $('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 40%\">Event Description</th><th style=\"width: 20%\">Component</th><th style=\"width: 10%\">CRUD</th><th style=\"width: 15%\">Total Count</th><th style=\"width: 10%\">Latest Activity</th>');
+        \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 40%\">Event Description</th><th style=\"width: 20%\">Component</th><th style=\"width: 10%\">CRUD</th><th style=\"width: 15%\">Total Count</th><th style=\"width: 10%\">Latest Activity</th>');
         fetchLogs(1);
     });
 
-    $(document).on('click', '#logs-pagination-container .paging a', function(e) {
+    \$(document).on('click', '#logs-pagination-container .paging a', function(e) {
         e.preventDefault();
-        var href = $(this).attr('href');
+        var href = \$(this).attr('href');
         if (href) {
             var match = href.match(/page=(\\d+)/);
             fetchLogs(match ? match[1] : 1);
         }
     });
 
-    $(document).on('click', '.btn-view-log-detail', function(e) {
+    \$(document).on('click', '.btn-view-log-detail', function(e) {
         e.preventDefault();
-        var logId = $(this).data('log-id');
+        var logId = \$(this).data('log-id');
         if (!logId) return;
 
-        var $body = $('#log-detail-modal-body');
-        $body.html('<div class=\"text-center py-5 text-muted\"><i class=\"fa fa-spinner fa-spin fa-2x mr-2\"></i> Loading log details...</div>');
-        $('#log-detail-modal').modal('show');
+        var \$body = \$('#log-detail-modal-body');
+        \$body.html('<div class=\"text-center py-5 text-muted\"><i class=\"fa fa-spinner fa-spin fa-2x mr-2\"></i> Loading log details...</div>');
+        \$('#log-detail-modal').modal('show');
 
         fetch(ajaxUrl + '?action=fetch_log_detail&logid=' + logId)
             .then(function(res) { return res.json(); })
             .then(function(res) {
                 if (res.success) {
-                    $body.html(res.html);
+                    \$body.html(res.html);
                 } else {
-                    $body.html('<div class=\"alert alert-danger m-3\">' + (res.error || 'Failed to load log details.') + '</div>');
+                    \$body.html('<div class=\"alert alert-danger m-3\">' + (res.error || 'Failed to load log details.') + '</div>');
                 }
             })
             .catch(function(err) {
                 console.error('Fetch Log Detail Error:', err);
-                $body.html('<div class=\"alert alert-danger m-3\">An error occurred while loading log details.</div>');
+                \$body.html('<div class=\"alert alert-danger m-3\">An error occurred while loading log details.</div>');
             });
     });
 
-    $('#btn-export-logs-csv').on('click', function(e) {
+    \$('#btn-export-logs-csv').on('click', function(e) {
         e.preventDefault();
-        var search   = $('#log-search-input').val().trim();
-        var crud     = $('#log-crud-select').val() || '';
-        var comp     = $('#log-component-select').val() || '';
-        var fromDate = $('#log-from-date').val() || '';
-        var toDate   = $('#log-to-date').val() || '';
+        var search   = \$('#log-search-input').val().trim();
+        var crud     = \$('#log-crud-select').val() || '';
+        var comp     = \$('#log-component-select').val() || '';
+        var fromDate = \$('#log-from-date').val() || '';
+        var toDate   = \$('#log-to-date').val() || '';
 
         var params = new URLSearchParams({
             action: 'export_logs',
@@ -661,38 +661,36 @@ $log_components = local_admin_functions_get_log_components();
             <div class="tab-pane" id="logs-explorer-pane" role="tabpanel" style="display: <?php echo ($tab === 'logs') ? 'block' : 'none'; ?>;">
                 
                 <!-- Filter Bar & Export Toolbar -->
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3 bg-light rounded border">
-                    <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
-                        <div class="search-box mb-2 mb-md-0" style="min-width: 220px; flex: 1;">
-                            <i class="fa fa-search"></i>
-                            <input type="text" id="log-search-input" class="form-control" placeholder="Search event, user, IP..." autocomplete="off">
-                        </div>
-
-                        <select id="log-crud-select" class="custom-select filter-select font-weight-bold" style="min-width: 140px; height: 42px; border-radius: 8px;">
-                            <option value="">All Actions (CRUD)</option>
-                            <option value="c">Create (C)</option>
-                            <option value="r">Read (R)</option>
-                            <option value="u">Update (U)</option>
-                            <option value="d">Delete (D)</option>
-                        </select>
-
-                        <select id="log-component-select" class="custom-select filter-select" style="min-width: 150px; height: 42px; border-radius: 8px;">
-                            <option value="">All Components</option>
-                            <?php foreach ($log_components as $comp): ?>
-                                <option value="<?php echo s($comp); ?>"><?php echo s($comp); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <input type="date" id="log-from-date" class="form-control filter-select" style="width: 145px; height: 42px; border-radius: 8px;" title="From Date">
-                        <input type="date" id="log-to-date" class="form-control filter-select" style="width: 145px; height: 42px; border-radius: 8px;" title="To Date">
-
-                        <button type="button" class="btn btn-filter-action" id="btn-apply-log-filters">
-                            <i class="fa fa-filter"></i> Filter
-                        </button>
-                        <button type="button" class="btn btn-reset-action" id="btn-reset-log-filters">Reset</button>
+                <div class="filter-bar-single mb-4">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="log-search-input" class="form-control" placeholder="Search event, user, IP..." autocomplete="off">
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
+                    <select id="log-crud-select" class="custom-select filter-select font-weight-bold" style="min-width: 140px; color: #2563eb;">
+                        <option value="">All Actions (CRUD)</option>
+                        <option value="c">Create (C)</option>
+                        <option value="r">Read (R)</option>
+                        <option value="u">Update (U)</option>
+                        <option value="d">Delete (D)</option>
+                    </select>
+
+                    <select id="log-component-select" class="custom-select filter-select" style="min-width: 150px;">
+                        <option value="">All Components</option>
+                        <?php foreach ($log_components as $comp): ?>
+                            <option value="<?php echo s($comp); ?>"><?php echo s($comp); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <input type="date" id="log-from-date" class="form-control filter-select" style="min-width: 135px;" title="From Date">
+                    <input type="date" id="log-to-date" class="form-control filter-select" style="min-width: 135px;" title="To Date">
+
+                    <button type="button" class="btn btn-filter-action" id="btn-apply-log-filters">
+                        <i class="fa fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-reset-action" id="btn-reset-log-filters">Reset</button>
+
+                    <div class="d-flex align-items-center gap-2 ml-auto">
                         <!-- View Mode Toggle Buttons -->
                         <div class="btn-group view-mode-btn-group" role="group" aria-label="View Mode">
                             <button type="button" class="btn btn-outline-primary active" id="btn-view-list" title="Flat List View">
