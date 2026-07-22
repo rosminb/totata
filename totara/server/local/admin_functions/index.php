@@ -746,7 +746,7 @@ $is_admin_user = is_siteadmin();
                 </div>
 
                 <!-- Scrollable Checkbox List -->
-                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto; overflow-x: hidden;" id="ts-checkbox-container">
+                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto; overflow-x: hidden; margin: 10px;" id="ts-checkbox-container">
                     <div class="row">
                         <?php foreach ($db_all_tables as $tbl):
                             $is_checked = in_array($tbl, $custom_tables_list);
