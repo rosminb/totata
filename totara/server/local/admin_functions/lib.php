@@ -69,7 +69,7 @@ function local_admin_functions_apply_debug_settings() {
  * Uses Totara's output renderer so it looks like a native Totara page.
  */
 function local_admin_functions_access_denied() {
-    global $PAGE, $OUTPUT, $CFG;
+    global $PAGE, $OUTPUT;
 
     // Suppress all PHP errors for security — never leak info to non-admins.
     @error_reporting(0);
@@ -100,14 +100,6 @@ function local_admin_functions_access_denied() {
                 <strong>Admin Functions</strong> module. If you believe this is a mistake,
                 please contact your system administrator.
             </p>
-            <div class="af-access-denied-actions">
-                <a href="<?php echo $CFG->wwwroot; ?>/my" class="btn af-btn-home">
-                    <i class="fa fa-home mr-2"></i> Go to Dashboard
-                </a>
-                <a href="<?php echo $CFG->wwwroot; ?>" class="btn af-btn-site">
-                    <i class="fa fa-globe mr-2"></i> Site Home
-                </a>
-            </div>
         </div>
     </div>
     <style>
@@ -155,54 +147,6 @@ function local_admin_functions_access_denied() {
         color: #475569;
         margin-bottom: 1rem;
         font-weight: 500;
-    }
-    .af-access-denied-desc {
-        font-size: 14px;
-        color: #94a3b8;
-        line-height: 1.7;
-        margin-bottom: 2rem;
-        padding: 0 0.5rem;
-    }
-    .af-access-denied-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    .af-btn-home {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-        color: #ffffff !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.65rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        box-shadow: 0 3px 10px rgba(37,99,235,0.25) !important;
-        transition: all 0.2s ease !important;
-        text-decoration: none !important;
-    }
-    .af-btn-home:hover {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
-        box-shadow: 0 5px 15px rgba(37,99,235,0.35) !important;
-        color: #ffffff !important;
-        transform: translateY(-1px);
-    }
-    .af-btn-site {
-        background: #ffffff !important;
-        color: #475569 !important;
-        border: 1.5px solid #e2e8f0 !important;
-        border-radius: 10px !important;
-        padding: 0.65rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        transition: all 0.2s ease !important;
-        text-decoration: none !important;
-    }
-    .af-btn-site:hover {
-        background: #f8fafc !important;
-        border-color: #cbd5e1 !important;
-        color: #0f172a !important;
-        transform: translateY(-1px);
     }
     </style>
     <?php
