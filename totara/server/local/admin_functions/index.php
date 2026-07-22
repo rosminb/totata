@@ -280,10 +280,13 @@ require(['jquery'], function($) {
     // === 5. Log Explorer AJAX Engine ===
     var logSearchTimeout = null;
     var currentLogViewMode = 'list';
+    var currentLogPage = 1;
 
-    function fetchLogs(page) {
+    function fetchLogs(page, scroll) {
         var tbodyLogs = document.querySelector('#db-logs-list tbody');
         if (!tbodyLogs) return;
+
+        currentLogPage = page || 1;
 
         var search   = \$('#log-search-input').val().trim();
         var crud     = \$('#log-crud-select').val() || '';
@@ -301,7 +304,7 @@ require(['jquery'], function($) {
             fromdate: fromDate,
             todate: toDate,
             viewmode: currentLogViewMode,
-            page: page || 1
+            page: currentLogPage
         });
 
         fetch(ajaxUrl + '?' + params.toString())
@@ -314,6 +317,13 @@ require(['jquery'], function($) {
                     var paginationLogs = document.getElementById('logs-pagination-container');
                     if (summaryLogs) summaryLogs.textContent = res.summary;
                     if (paginationLogs) paginationLogs.innerHTML = res.pagination;
+
+                    if (scroll) {
+                        var \$wrapper = \$('#logs-table-wrapper');
+                        if (\$wrapper.length) {
+                            \$('html, body').animate({ scrollTop: \$wrapper.offset().top - 80 }, 200);
+                        }
+                    }
                 }
             })
             .catch(function(err) {
@@ -364,13 +374,20 @@ require(['jquery'], function($) {
         fetchLogs(1);
     });
 
-    \$(document).on('click', '#logs-pagination-container .paging a', function(e) {
+    \$(document).on('click', '#logs-pagination-container a', function(e) {
         e.preventDefault();
         var href = \$(this).attr('href');
-        if (href) {
-            var match = href.match(/page=(\\d+)/);
-            fetchLogs(match ? match[1] : 1);
+        if (!href) return;
+        var page = 1;
+        try {
+            var match = href.match(/[?&;]page=(\\d+)/i);
+            if (match && match[1]) {
+                page = parseInt(match[1], 10);
+            }
+        } catch (err) {
+            page = 1;
         }
+        fetchLogs(page, true);
     });
 
     \$(document).on('click', '.btn-view-log-detail', function(e) {
