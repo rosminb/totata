@@ -275,6 +275,8 @@ require(['jquery'], function($) {
                     console.error('SQL Runner Error:', err);
                 });
         });
+    }
+
     // === 5. Log Explorer AJAX Engine ===
     var logSearchTimeout = null;
     var currentLogViewMode = 'list';
