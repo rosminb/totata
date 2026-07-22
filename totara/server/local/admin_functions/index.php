@@ -685,11 +685,11 @@ $is_admin_user = is_siteadmin();
      aria-labelledby="debugConfirmModalLabel" aria-modal="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-            <div class="modal-header bg-dark text-white py-3">
-                <h5 class="modal-title font-weight-bold d-flex align-items-center text-white mb-0" id="debugConfirmModalLabel">
+            <div class="modal-header" style="background: #ffffff; font-size: 14px; padding: 10px 16px; min-height: unset; border-bottom: 1px solid #e2e8f0;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="debugConfirmModalLabel" style="font-size: 14px; color: #0f172a;">
                     <i class="fa fa-bug text-danger mr-2"></i> Confirm Debug Mode Toggle
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #64748b; opacity: 1; font-size: 18px;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>

@@ -411,9 +411,38 @@
     z-index: 100050 !important;
 }
 
+#table-selector-modal .modal-header,
+#debug-confirm-modal .modal-header {
+    background-color: #ffffff !important;
+    padding: 8px 16px !important;
+    min-height: auto !important;
+    height: auto !important;
+    align-items: center !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+#table-selector-modal .modal-header .modal-title,
+#debug-confirm-modal .modal-header .modal-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-bottom: 0 !important;
+    line-height: 1.4 !important;
+}
+
+#table-selector-modal .modal-header .close,
+#debug-confirm-modal .modal-header .close {
+    padding: 8px 12px !important;
+    margin: -8px -12px -8px auto !important;
+    font-size: 18px !important;
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
 .modal-backdrop {
     z-index: 100040 !important;
 }
+
 
 
 
