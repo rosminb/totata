@@ -95,6 +95,370 @@ try {
         ));
         exit;
 
+    } else if ($action === 'export_logs') {
+        $search     = optional_param('search', '', PARAM_TEXT);
+        $crud       = optional_param('crud', '', PARAM_ALPHA);
+        $comp_flt   = optional_param('component', '', PARAM_ALPHAEXT);
+        $fromdate   = optional_param('fromdate', '', PARAM_TEXT);
+        $todate     = optional_param('todate', '', PARAM_TEXT);
+        $userfilter = optional_param('userfilter', '', PARAM_TEXT);
+
+        local_admin_functions_export_logs_csv($search, $crud, $comp_flt, $fromdate, $todate, $userfilter);
+        exit;
+
+    } else if ($action === 'fetch_logs') {
+        $search     = optional_param('search', '', PARAM_TEXT);
+        $crud       = optional_param('crud', '', PARAM_ALPHA);
+        $comp_flt   = optional_param('component', '', PARAM_ALPHAEXT);
+        $fromdate   = optional_param('fromdate', '', PARAM_TEXT);
+        $todate     = optional_param('todate', '', PARAM_TEXT);
+        $userfilter = optional_param('userfilter', '', PARAM_TEXT);
+        $viewmode   = optional_param('viewmode', 'list', PARAM_ALPHA);
+        $page       = optional_param('page', 1, PARAM_INT);
+        $perpage    = 100;
+
+        $where = array("1=1");
+        $params = array();
+
+        if ($search !== '') {
+            $where[] = "(l.eventname " . $DB->sql_like('l.eventname', ':s1', false) . "
+                        OR l.component " . $DB->sql_like('l.component', ':s2', false) . "
+                        OR l.target " . $DB->sql_like('l.target', ':s3', false) . "
+                        OR l.ip " . $DB->sql_like('l.ip', ':s4', false) . "
+                        OR u.firstname " . $DB->sql_like('u.firstname', ':s5', false) . "
+                        OR u.lastname " . $DB->sql_like('u.lastname', ':s6', false) . "
+                        OR u.username " . $DB->sql_like('u.username', ':s7', false) . ")";
+            $params['s1'] = '%' . $search . '%';
+            $params['s2'] = '%' . $search . '%';
+            $params['s3'] = '%' . $search . '%';
+            $params['s4'] = '%' . $search . '%';
+            $params['s5'] = '%' . $search . '%';
+            $params['s6'] = '%' . $search . '%';
+            $params['s7'] = '%' . $search . '%';
+        }
+
+        if ($crud !== '') {
+            $where[] = "l.crud = :crud";
+            $params['crud'] = strtolower($crud);
+        }
+
+        if ($comp_flt !== '') {
+            $where[] = "l.component = :comp";
+            $params['comp'] = $comp_flt;
+        }
+
+        if ($fromdate !== '') {
+            $ts_from = strtotime($fromdate);
+            if ($ts_from !== false) {
+                $where[] = "l.timecreated >= :tsfrom";
+                $params['tsfrom'] = $ts_from;
+            }
+        }
+
+        if ($todate !== '') {
+            $ts_to = strtotime($todate . ' 23:59:59');
+            if ($ts_to !== false) {
+                $where[] = "l.timecreated <= :tsto";
+                $params['tsto'] = $ts_to;
+            }
+        }
+
+        if ($userfilter !== '') {
+            if (is_numeric($userfilter)) {
+                $where[] = "l.userid = :ufid";
+                $params['ufid'] = (int)$userfilter;
+            } else {
+                $where[] = "(u.username " . $DB->sql_like('u.username', ':uf1', false) . " OR u.firstname " . $DB->sql_like('u.firstname', ':uf2', false) . " OR u.lastname " . $DB->sql_like('u.lastname', ':uf3', false) . ")";
+                $params['uf1'] = '%' . $userfilter . '%';
+                $params['uf2'] = '%' . $userfilter . '%';
+                $params['uf3'] = '%' . $userfilter . '%';
+            }
+        }
+
+        $wherestr = implode(' AND ', $where);
+
+        if ($viewmode === 'group') {
+            // Grouped View: Count by eventname and component.
+            $groupsql = "SELECT l.eventname, l.component, l.crud, l.target,
+                                COUNT(*) AS total_count,
+                                MAX(l.timecreated) AS latest_time
+                           FROM {logstore_standard_log} l
+                      LEFT JOIN {user} u ON u.id = l.userid
+                          WHERE {$wherestr}
+                       GROUP BY l.eventname, l.component, l.crud, l.target
+                       ORDER BY total_count DESC, latest_time DESC";
+
+            $groups = $DB->get_records_sql($groupsql, $params);
+            $total_groups = count($groups);
+
+            ob_start();
+            if (empty($groups)) {
+                echo '<tr><td colspan="6" class="text-center py-5 text-muted font-italic">No log events match your active search filters.</td></tr>';
+            } else {
+                $idx = 1;
+                foreach ($groups as $g) {
+                    $human_title = local_admin_functions_human_event_name($g->eventname, $g->target, '', $g->component);
+                    $crud_letter = strtoupper($g->crud);
+                    $badge_class = 'badge-crud-' . strtolower($g->crud);
+                    
+                    echo '<tr>';
+                    echo '<td class="font-weight-semibold text-muted">' . $idx++ . '</td>';
+                    echo '<td>';
+                    echo '<div class="font-weight-bold text-dark">' . s($human_title) . '</div>';
+                    echo '<div class="small text-muted font-monospace">' . s($g->eventname) . '</div>';
+                    echo '</td>';
+                    echo '<td><span class="badge badge-light border text-secondary font-weight-normal">' . s($g->component) . '</span></td>';
+                    echo '<td><span class="' . $badge_class . '">' . s($crud_letter) . '</span></td>';
+                    echo '<td><span class="badge badge-primary font-weight-bold p-2" style="font-size: 13px;">' . number_format($g->total_count) . ' events</span></td>';
+                    echo '<td class="text-secondary small">' . date('d M Y, h:i:s A', $g->latest_time) . '</td>';
+                    echo '</tr>';
+                }
+            }
+            $rows_html = ob_get_clean();
+
+            echo json_encode(array(
+                'success' => true,
+                'html' => $rows_html,
+                'summary' => "Grouped into " . number_format($total_groups) . " event categories",
+                'pagination' => '',
+                'total' => $total_groups
+            ));
+            exit;
+
+        } else {
+            // Flat List View.
+            $countsql = "SELECT COUNT(*)
+                           FROM {logstore_standard_log} l
+                      LEFT JOIN {user} u ON u.id = l.userid
+                          WHERE {$wherestr}";
+
+            $total_records = $DB->count_records_sql($countsql, $params);
+            $totalpages = max(1, (int) ceil($total_records / $perpage));
+            if ($page < 1) $page = 1;
+            else if ($page > $totalpages) $page = $totalpages;
+
+            $offset = ($page - 1) * $perpage;
+
+            $listsql = "SELECT l.id, l.timecreated, l.eventname, l.component, l.action, l.target, l.crud, l.ip, l.userid, l.courseid,
+                               u.username, u.firstname, u.lastname, u.email,
+                               c.shortname AS coursename
+                          FROM {logstore_standard_log} l
+                     LEFT JOIN {user} u ON u.id = l.userid
+                     LEFT JOIN {course} c ON c.id = l.courseid
+                         WHERE {$wherestr}
+                      ORDER BY l.id DESC";
+
+            $records = $DB->get_records_sql($listsql, $params, $offset, $perpage);
+
+            $start_index = ($total_records > 0) ? ($offset + 1) : 0;
+            $end_index = min($offset + count($records), $total_records);
+
+            ob_start();
+            if (empty($records)) {
+                echo '<tr><td colspan="8" class="text-center py-5 text-muted font-italic">No system logs match your active filter criteria.</td></tr>';
+            } else {
+                foreach ($records as $r) {
+                    $fullname = trim($r->firstname . ' ' . $r->lastname);
+                    if (empty($fullname)) {
+                        $fullname = $r->username ? $r->username : 'CLI / System';
+                    }
+                    $initials = strtoupper(substr($fullname, 0, 1));
+                    $human_event = local_admin_functions_human_event_name($r->eventname, $r->target, $r->action, $r->component);
+                    $crud_letter = strtoupper($r->crud);
+                    $badge_class = 'badge-crud-' . strtolower($r->crud);
+
+                    echo '<tr>';
+                    echo '<td class="font-weight-semibold text-muted mono-cell">' . $r->id . '</td>';
+                    echo '<td class="text-secondary small white-space-nowrap">' . date('d M Y, h:i:s A', $r->timecreated) . '</td>';
+                    echo '<td>';
+                    echo '<div class="font-weight-bold text-dark" style="font-size: 13.5px;">' . s($human_event) . '</div>';
+                    echo '<div class="text-muted small text-truncate" style="max-width: 280px;" title="' . s($r->eventname) . '">' . s($r->eventname) . '</div>';
+                    echo '</td>';
+                    echo '<td><span class="badge badge-light border text-secondary font-weight-normal">' . s($r->component) . '</span></td>';
+                    echo '<td class="text-center"><span class="' . $badge_class . '">' . s($crud_letter) . '</span></td>';
+                    echo '<td>';
+                    echo '<div class="d-flex align-items-center gap-2">';
+                    echo '<div class="af-user-avatar">' . s($initials) . '</div>';
+                    echo '<div>';
+                    echo '<div class="font-weight-bold text-dark font-size-13">' . s($fullname) . '</div>';
+                    if ($r->email) {
+                        echo '<div class="text-muted small">' . s($r->email) . '</div>';
+                    }
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</td>';
+                    echo '<td class="text-secondary mono-cell small">' . s($r->ip ? $r->ip : 'CLI') . '</td>';
+                    echo '<td class="text-center">';
+                    echo '<button type="button" class="btn-action-icon btn-view-log-detail" data-log-id="' . $r->id . '" title="View Log Details"><i class="fa fa-eye"></i></button>';
+                    echo '</td>';
+                    echo '</tr>';
+                }
+            }
+            $rows_html = ob_get_clean();
+
+            ob_start();
+            if ($total_records > 0) {
+                $baseurl = new moodle_url('/local/admin_functions/index.php', array(
+                    'tab' => 'logs',
+                    'search' => $search,
+                    'crud' => $crud,
+                    'component' => $comp_flt,
+                    'fromdate' => $fromdate,
+                    'todate' => $todate,
+                    'userfilter' => $userfilter,
+                    'viewmode' => $viewmode
+                ));
+                echo $OUTPUT->paging_bar($total_records, $page, $perpage, $baseurl);
+            }
+            $pagination_html = ob_get_clean();
+
+            $summary_text = ($total_records > 0) ? "Showing {$start_index} to {$end_index} of " . number_format($total_records) . " entries" : "Showing 0 entries";
+
+            echo json_encode(array(
+                'success' => true,
+                'html' => $rows_html,
+                'summary' => $summary_text,
+                'pagination' => $pagination_html,
+                'total' => $total_records
+            ));
+            exit;
+        }
+
+    } else if ($action === 'fetch_log_detail') {
+        $logid = required_param('logid', PARAM_INT);
+
+        $sql = "SELECT l.*,
+                       u.username, u.firstname, u.lastname, u.email,
+                       ru.username AS realusername, ru.firstname AS realfirstname, ru.lastname AS reallastname,
+                       c.fullname AS coursename, c.shortname AS courseshortname
+                  FROM {logstore_standard_log} l
+             LEFT JOIN {user} u ON u.id = l.userid
+             LEFT JOIN {user} ru ON ru.id = l.realuserid
+             LEFT JOIN {course} c ON c.id = l.courseid
+                 WHERE l.id = :id";
+
+        $log = $DB->get_record_sql($sql, array('id' => $logid));
+
+        if (!$log) {
+            echo json_encode(array('success' => false, 'error' => 'Log record not found.'));
+            exit;
+        }
+
+        $user_fullname = trim($log->firstname . ' ' . $log->lastname);
+        if (empty($user_fullname)) {
+            $user_fullname = $log->username ? $log->username : 'System / CLI';
+        }
+
+        $real_user_fullname = '';
+        if ($log->realuserid && $log->realuserid != $log->userid) {
+            $real_user_fullname = trim($log->realfirstname . ' ' . $log->reallastname);
+            if (empty($real_user_fullname)) {
+                $real_user_fullname = $log->realusername;
+            }
+        }
+
+        $human_event = local_admin_functions_human_event_name($log->eventname, $log->target, $log->action, $log->component);
+        $other_decoded = local_admin_functions_decode_log_other($log->other);
+
+        ob_start();
+        ?>
+        <table class="inspector-details-table-clean">
+            <tr>
+                <td class="inspector-key">Log Record ID</td>
+                <td class="inspector-val font-weight-bold text-primary mono-cell">#<?php echo $log->id; ?></td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Event Title</td>
+                <td class="inspector-val font-weight-bold text-dark" style="font-size: 15px;"><?php echo s($human_event); ?></td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Raw Event Name</td>
+                <td class="inspector-val text-muted mono-cell small"><?php echo s($log->eventname); ?></td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Component</td>
+                <td class="inspector-val"><span class="badge badge-light border text-dark font-weight-bold"><?php echo s($log->component); ?></span></td>
+            </tr>
+            <tr>
+                <td class="inspector-key">CRUD Action</td>
+                <td class="inspector-val">
+                    <span class="badge-crud-<?php echo strtolower($log->crud); ?>">
+                        <?php echo strtoupper($log->crud); ?>
+                    </span>
+                    <span class="text-secondary small ml-2">(Action: <?php echo s($log->action); ?>, Target: <?php echo s($log->target); ?>)</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Performed By User</td>
+                <td class="inspector-val font-weight-bold text-dark">
+                    <?php echo s($user_fullname); ?>
+                    <?php if ($log->email): ?>
+                        <span class="text-muted font-weight-normal small ml-1">(<?php echo s($log->email); ?>)</span>
+                    <?php endif; ?>
+                    <span class="badge badge-secondary ml-2">ID: <?php echo $log->userid; ?></span>
+                </td>
+            </tr>
+            <?php if (!empty($real_user_fullname)): ?>
+                <tr>
+                    <td class="inspector-key text-danger font-weight-bold">Impersonated By (Real User)</td>
+                    <td class="inspector-val text-danger font-weight-bold">
+                        <?php echo s($real_user_fullname); ?> (ID: <?php echo $log->realuserid; ?>)
+                    </td>
+                </tr>
+            <?php endif; ?>
+            <?php if ($log->coursename): ?>
+                <tr>
+                    <td class="inspector-key">Course Context</td>
+                    <td class="inspector-val font-weight-bold text-dark">
+                        <?php echo s($log->coursename); ?> <span class="text-muted small">(<?php echo s($log->courseshortname); ?>)</span>
+                    </td>
+                </tr>
+            <?php endif; ?>
+            <tr>
+                <td class="inspector-key">IP Address / Origin</td>
+                <td class="inspector-val mono-cell">
+                    <?php echo s($log->ip ? $log->ip : 'CLI'); ?>
+                    <?php if ($log->origin): ?>
+                        <span class="badge badge-outline-secondary ml-2"><?php echo s($log->origin); ?></span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Exact Timestamp</td>
+                <td class="inspector-val text-dark font-weight-semibold">
+                    <?php echo date('d F Y, H:i:s P', $log->timecreated); ?>
+                    <span class="text-muted small ml-1">(Unix: <?php echo $log->timecreated; ?>)</span>
+                </td>
+            </tr>
+            <?php if ($log->objecttable): ?>
+                <tr>
+                    <td class="inspector-key">Target DB Table &amp; ID</td>
+                    <td class="inspector-val mono-cell">
+                        Table: <code>{<?php echo s($log->objecttable); ?>}</code> | Object ID: <strong><?php echo $log->objectid; ?></strong>
+                    </td>
+                </tr>
+            <?php endif; ?>
+            <tr>
+                <td class="inspector-key">Context ID</td>
+                <td class="inspector-val mono-cell"><?php echo $log->contextid; ?></td>
+            </tr>
+            <tr>
+                <td class="inspector-key">Extra Event Data (Other)</td>
+                <td class="inspector-val">
+                    <?php if (empty($other_decoded)): ?>
+                        <span class="text-muted font-italic">No extra parameters recorded.</span>
+                    <?php else: ?>
+                        <pre class="bg-dark text-warning p-3 rounded font-size-12 m-0" style="max-height: 220px; overflow-y: auto;"><code><?php echo s(json_encode($other_decoded, JSON_PRETTY_PRINT)); ?></code></pre>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        </table>
+        <?php
+        $detail_html = ob_get_clean();
+
+        echo json_encode(array('success' => true, 'html' => $detail_html));
+        exit;
+
     } else if ($action === 'fetch_tables') {
         $search        = optional_param('search', '', PARAM_TEXT);
         $status_filter = optional_param('status_filter', '', PARAM_ALPHA);

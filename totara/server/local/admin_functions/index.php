@@ -28,7 +28,7 @@ $scope   = optional_param('scope', 'custom', PARAM_ALPHA);
 $sql     = trim(optional_param('sql', '', PARAM_RAW));
 $perpage = 100;
 
-$allowed_tabs = array('tables', 'sql');
+$allowed_tabs = array('tables', 'logs', 'sql');
 if (!in_array($tab, $allowed_tabs)) {
     $tab = 'tables';
 }
@@ -275,7 +275,145 @@ require(['jquery'], function($) {
                     console.error('SQL Runner Error:', err);
                 });
         });
+    // === 5. Log Explorer AJAX Engine ===
+    var logSearchTimeout = null;
+    var currentLogViewMode = 'list';
+
+    function fetchLogs(page) {
+        var tbodyLogs = document.querySelector('#db-logs-list tbody');
+        if (!tbodyLogs) return;
+
+        var search   = $('#log-search-input').val().trim();
+        var crud     = $('#log-crud-select').val() || '';
+        var comp     = $('#log-component-select').val() || '';
+        var fromDate = $('#log-from-date').val() || '';
+        var toDate   = $('#log-to-date').val() || '';
+
+        $(tbodyLogs).css('opacity', '0.4');
+
+        var params = new URLSearchParams({
+            action: 'fetch_logs',
+            search: search,
+            crud: crud,
+            component: comp,
+            fromdate: fromDate,
+            todate: toDate,
+            viewmode: currentLogViewMode,
+            page: page || 1
+        });
+
+        fetch(ajaxUrl + '?' + params.toString())
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                $(tbodyLogs).css('opacity', '1');
+                if (res.success) {
+                    tbodyLogs.innerHTML = res.html;
+                    var summaryLogs = document.getElementById('logs-summary-container');
+                    var paginationLogs = document.getElementById('logs-pagination-container');
+                    if (summaryLogs) summaryLogs.textContent = res.summary;
+                    if (paginationLogs) paginationLogs.innerHTML = res.pagination;
+                }
+            })
+            .catch(function(err) {
+                $(tbodyLogs).css('opacity', '1');
+                console.error('AJAX Fetch Logs Error:', err);
+            });
     }
+
+    if ($('#logs-explorer-pane').is(':visible') || window.location.search.indexOf('tab=logs') !== -1) {
+        fetchLogs(1);
+    }
+
+    $('#log-search-input').on('input', function() {
+        clearTimeout(logSearchTimeout);
+        logSearchTimeout = setTimeout(function() { fetchLogs(1); }, 350);
+    });
+
+    $('#log-crud-select, #log-component-select, #log-from-date, #log-to-date').on('change', function() {
+        fetchLogs(1);
+    });
+
+    $('#btn-apply-log-filters').on('click', function() {
+        fetchLogs(1);
+    });
+
+    $('#btn-reset-log-filters').on('click', function() {
+        $('#log-search-input').val('');
+        $('#log-crud-select').val('');
+        $('#log-component-select').val('');
+        $('#log-from-date').val('');
+        $('#log-to-date').val('');
+        fetchLogs(1);
+    });
+
+    $('#btn-view-list').on('click', function() {
+        $(this).addClass('active');
+        $('#btn-view-group').removeClass('active');
+        currentLogViewMode = 'list';
+        $('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
+        fetchLogs(1);
+    });
+
+    $('#btn-view-group').on('click', function() {
+        $(this).addClass('active');
+        $('#btn-view-list').removeClass('active');
+        currentLogViewMode = 'group';
+        $('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 40%\">Event Description</th><th style=\"width: 20%\">Component</th><th style=\"width: 10%\">CRUD</th><th style=\"width: 15%\">Total Count</th><th style=\"width: 10%\">Latest Activity</th>');
+        fetchLogs(1);
+    });
+
+    $(document).on('click', '#logs-pagination-container .paging a', function(e) {
+        e.preventDefault();
+        var href = $(this).attr('href');
+        if (href) {
+            var match = href.match(/page=(\\d+)/);
+            fetchLogs(match ? match[1] : 1);
+        }
+    });
+
+    $(document).on('click', '.btn-view-log-detail', function(e) {
+        e.preventDefault();
+        var logId = $(this).data('log-id');
+        if (!logId) return;
+
+        var $body = $('#log-detail-modal-body');
+        $body.html('<div class=\"text-center py-5 text-muted\"><i class=\"fa fa-spinner fa-spin fa-2x mr-2\"></i> Loading log details...</div>');
+        $('#log-detail-modal').modal('show');
+
+        fetch(ajaxUrl + '?action=fetch_log_detail&logid=' + logId)
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    $body.html(res.html);
+                } else {
+                    $body.html('<div class=\"alert alert-danger m-3\">' + (res.error || 'Failed to load log details.') + '</div>');
+                }
+            })
+            .catch(function(err) {
+                console.error('Fetch Log Detail Error:', err);
+                $body.html('<div class=\"alert alert-danger m-3\">An error occurred while loading log details.</div>');
+            });
+    });
+
+    $('#btn-export-logs-csv').on('click', function(e) {
+        e.preventDefault();
+        var search   = $('#log-search-input').val().trim();
+        var crud     = $('#log-crud-select').val() || '';
+        var comp     = $('#log-component-select').val() || '';
+        var fromDate = $('#log-from-date').val() || '';
+        var toDate   = $('#log-to-date').val() || '';
+
+        var params = new URLSearchParams({
+            action: 'export_logs',
+            search: search,
+            crud: crud,
+            component: comp,
+            fromdate: fromDate,
+            todate: toDate
+        });
+
+        window.location.href = ajaxUrl + '?' + params.toString();
+    });
 
 });
 ", true);
@@ -325,6 +463,7 @@ function get_table_description_index($tablename) {
 
 $debug_active = local_admin_functions_is_debug_active();
 $is_admin_user = is_siteadmin();
+$log_components = local_admin_functions_get_log_components();
 ?>
 
 <!-- 1. Page Header Row with Admin Controls -->
@@ -360,11 +499,16 @@ $is_admin_user = is_siteadmin();
 <div class="admin-functions-container card" id="admin-functions-tables-app" data-ajax-url="<?php echo (new moodle_url('/local/admin_functions/ajax.php'))->out(false); ?>">
     <div class="card-body p-4">
 
-        <!-- Navigation Tabs (2 Tabs: Tables List & SQL Query Runner) -->
+        <!-- Navigation Tabs (3 Tabs: Tables List, Log Explorer & SQL Query Runner) -->
         <ul class="nav nav-tabs admin-nav-tabs mb-4" id="admin-functions-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link <?php echo ($tab === 'tables') ? 'active' : ''; ?>" href="index.php?tab=tables">
                     <i class="fa fa-list mr-1"></i> Tables List
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo ($tab === 'logs') ? 'active' : ''; ?>" href="index.php?tab=logs">
+                    <i class="fa fa-history mr-1"></i> Log Explorer
                 </a>
             </li>
             <li class="nav-item">
@@ -513,7 +657,91 @@ $is_admin_user = is_siteadmin();
 
             </div>
 
-            <!-- Pane 2: SQL Query Runner with Detailed Errors -->
+            <!-- Pane 2: Log Explorer (logstore_standard_log) -->
+            <div class="tab-pane" id="logs-explorer-pane" role="tabpanel" style="display: <?php echo ($tab === 'logs') ? 'block' : 'none'; ?>;">
+                
+                <!-- Filter Bar & Export Toolbar -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3 bg-light rounded border">
+                    <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+                        <div class="search-box mb-2 mb-md-0" style="min-width: 220px; flex: 1;">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="log-search-input" class="form-control" placeholder="Search event, user, IP..." autocomplete="off">
+                        </div>
+
+                        <select id="log-crud-select" class="custom-select filter-select font-weight-bold" style="min-width: 140px; height: 42px; border-radius: 8px;">
+                            <option value="">All Actions (CRUD)</option>
+                            <option value="c">Create (C)</option>
+                            <option value="r">Read (R)</option>
+                            <option value="u">Update (U)</option>
+                            <option value="d">Delete (D)</option>
+                        </select>
+
+                        <select id="log-component-select" class="custom-select filter-select" style="min-width: 150px; height: 42px; border-radius: 8px;">
+                            <option value="">All Components</option>
+                            <?php foreach ($log_components as $comp): ?>
+                                <option value="<?php echo s($comp); ?>"><?php echo s($comp); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <input type="date" id="log-from-date" class="form-control filter-select" style="width: 145px; height: 42px; border-radius: 8px;" title="From Date">
+                        <input type="date" id="log-to-date" class="form-control filter-select" style="width: 145px; height: 42px; border-radius: 8px;" title="To Date">
+
+                        <button type="button" class="btn btn-filter-action" id="btn-apply-log-filters">
+                            <i class="fa fa-filter"></i> Filter
+                        </button>
+                        <button type="button" class="btn btn-reset-action" id="btn-reset-log-filters">Reset</button>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- View Mode Toggle Buttons -->
+                        <div class="btn-group view-mode-btn-group" role="group" aria-label="View Mode">
+                            <button type="button" class="btn btn-outline-primary active" id="btn-view-list" title="Flat List View">
+                                <i class="fa fa-list"></i> List
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="btn-view-group" title="Group by Event Type">
+                                <i class="fa fa-cubes"></i> Grouped
+                            </button>
+                        </div>
+
+                        <!-- Export CSV -->
+                        <button type="button" class="btn btn-outline-success font-weight-bold" id="btn-export-logs-csv" style="border-radius: 8px; font-size: 13px; height: 42px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa fa-download mr-1"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Table Container -->
+                <div class="clean-table-container mb-3" id="logs-table-wrapper">
+                    <table class="clean-table" id="db-logs-list">
+                        <thead>
+                            <tr id="logs-header-tr">
+                                <th style="width: 6%">Log ID</th>
+                                <th style="width: 16%">Time Created</th>
+                                <th style="width: 25%">Event Description</th>
+                                <th style="width: 13%">Component</th>
+                                <th style="width: 8%" class="text-center">CRUD</th>
+                                <th style="width: 18%">Performed By</th>
+                                <th style="width: 10%">IP Address</th>
+                                <th style="width: 4%" class="text-center">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer Summary & AJAX Pagination Container -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 pt-2">
+                    <div class="text-secondary small font-weight-medium mb-2 mb-md-0" id="logs-summary-container">
+                        Loading system logs...
+                    </div>
+                    <div id="logs-pagination-container"></div>
+                </div>
+
+            </div>
+
+            <!-- Pane 3: SQL Query Runner with Detailed Errors -->
             <div class="tab-pane" id="sql-runner-pane" role="tabpanel" style="display: <?php echo ($tab === 'sql') ? 'block' : 'none'; ?>;">
                 <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #f8fafc;">
                     <div class="card-body p-4">
@@ -781,6 +1009,32 @@ $is_admin_user = is_siteadmin();
                         <i class="fa fa-save mr-1"></i> Save Selected Tables
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Bootstrap 4 Modal: Log Record Inspector
+     ============================================================ -->
+<div class="modal fade" id="log-detail-modal"
+     tabindex="-1" role="dialog"
+     aria-labelledby="logDetailModalLabel" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="background: #0b1528; padding: 12px 20px;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="logDetailModalLabel" style="font-size: 15px; color: #ffffff;">
+                    <i class="fa fa-file-text-o mr-2 text-white"></i> Log Record Inspector
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="color: #ffffff; opacity: 0.9; font-size: 18px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-dark" id="log-detail-modal-body" style="font-size: 14px;">
+                <div class="text-center py-5 text-muted"><i class="fa fa-spinner fa-spin fa-2x mr-2"></i> Loading log details...</div>
+            </div>
+            <div class="modal-footer bg-light py-3 px-4">
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
