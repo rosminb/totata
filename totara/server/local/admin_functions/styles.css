@@ -472,9 +472,9 @@
 
 /* Each col wrapper: no extra padding, tight fit */
 .ts-table-item {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    margin-bottom: 6px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    margin-bottom: 8px !important;
 }
 
 /* Override Bootstrap custom-control to use flexbox for perfect alignment */
@@ -482,7 +482,8 @@
     display: flex !important;
     align-items: center !important;
     padding-left: 0 !important;
-    min-height: unset !important;
+    min-height: 24px !important;
+    margin-bottom: 0 !important;
 }
 
 /* The actual checkbox input */
@@ -491,9 +492,11 @@
     flex-shrink: 0 !important;
     width: 15px !important;
     height: 15px !important;
-    margin-right: 7px !important;
+    margin-right: 8px !important;
     margin-top: 0 !important;
+    margin-left: 0 !important;
     cursor: pointer !important;
+    vertical-align: middle !important;
 }
 
 /* The label — sits right next to the checkbox */
@@ -510,6 +513,7 @@
     margin-bottom: 0 !important;
     word-break: break-all !important;
     min-width: 0 !important;
+    display: inline-block !important;
 }
 
 /* Remove Bootstrap's ::before / ::after pseudo-elements (the custom checkbox box) */

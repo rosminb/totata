@@ -734,19 +734,18 @@ $is_admin_user = is_siteadmin();
 
                 <!-- Search & Quick Selection Controls -->
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div class="position-relative flex-grow-1" style="min-width: 250px;">
-                        <i class="fa fa-search position-absolute text-muted" style="left: 12px; top: 12px;"></i>
-                        <input type="text" id="ts-modal-search" class="form-control" placeholder="Search tables..." style="padding-left: 34px; height: 40px; border-radius: 8px;">
+                    <div class="flex-grow-1" style="min-width: 240px; max-width: 320px;">
+                        <input type="text" id="ts-modal-search" class="form-control" placeholder="Search tables..." style="padding-left: 12px; height: 38px; border-radius: 6px; font-size: 13px; border: 1px solid #cbd5e1;">
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" id="ts-select-custom-only">Select Custom/Local Only</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ts-select-all">Select All</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="ts-deselect-all">Clear All</button>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" id="ts-select-custom-only" style="border-radius: 6px; font-size: 12px; padding: 6px 12px;">Select Custom/Local Only</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ts-select-all" style="border-radius: 6px; font-size: 12px; padding: 6px 12px;">Select All</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="ts-deselect-all" style="border-radius: 6px; font-size: 12px; padding: 6px 12px;">Clear All</button>
                     </div>
                 </div>
 
                 <!-- Scrollable Checkbox List -->
-                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto; overflow-x: hidden; margin: 10px;" id="ts-checkbox-container">
+                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto; overflow-x: hidden; margin-top: 15px; margin-bottom: 0;" id="ts-checkbox-container">
                     <div class="row">
                         <?php foreach ($db_all_tables as $tbl):
                             $is_checked = in_array($tbl, $custom_tables_list);
