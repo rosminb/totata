@@ -13,12 +13,12 @@ require_once(__DIR__ . '/lib.php');
 // Apply admin-only debug mode rules.
 local_admin_functions_apply_debug_settings();
 
-// Force user login and verify capability.
+// Force user login — superadmin only.
 require_login();
-$context = context_system::instance();
-if (!is_siteadmin() && !has_capability('moodle/site:config', $context) && !has_capability('local/admin_functions:view', $context)) {
-    require_capability('moodle/site:config', $context);
+if (!is_siteadmin()) {
+    print_error('accessdenied', 'admin');
 }
+$context = context_system::instance();
 
 // Fetch parameters.
 $tab     = optional_param('tab', 'tables', PARAM_ALPHA);
@@ -324,7 +324,7 @@ function get_table_description_index($tablename) {
 }
 
 $debug_active = local_admin_functions_is_debug_active();
-$is_admin_user = is_siteadmin() || has_capability('moodle/site:config', $context);
+$is_admin_user = is_siteadmin();
 ?>
 
 <!-- 1. Page Header Row with Admin Controls -->

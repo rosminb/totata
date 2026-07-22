@@ -14,8 +14,7 @@ defined('MOODLE_INTERNAL') || die();
  * @param global_navigation $nav
  */
 function local_admin_functions_extend_navigation(global_navigation $nav) {
-    $context = context_system::instance();
-    if (is_siteadmin() || has_capability('moodle/site:config', $context) || has_capability('local/admin_functions:view', $context)) {
+    if (is_siteadmin()) {
         $node = navigation_node::create(
             get_string('pluginname', 'local_admin_functions'),
             new moodle_url('/local/admin_functions/index.php'),
@@ -33,8 +32,7 @@ function local_admin_functions_extend_navigation(global_navigation $nav) {
  * @return bool
  */
 function local_admin_functions_is_debug_active() {
-    $context = context_system::instance();
-    if (!is_siteadmin() && !has_capability('moodle/site:config', $context)) {
+    if (!is_siteadmin()) {
         return false;
     }
     return (bool) get_config('local_admin_functions', 'debug_mode');
@@ -46,8 +44,7 @@ function local_admin_functions_is_debug_active() {
  */
 function local_admin_functions_apply_debug_settings() {
     global $CFG;
-    $context = context_system::instance();
-    if (is_siteadmin() || has_capability('moodle/site:config', $context)) {
+    if (is_siteadmin()) {
         if (local_admin_functions_is_debug_active()) {
             @error_reporting(E_ALL | E_STRICT);
             @ini_set('display_errors', '1');

@@ -14,12 +14,13 @@ require_once(__DIR__ . '/lib.php');
 // Apply admin-only debug mode rules.
 local_admin_functions_apply_debug_settings();
 
-// Force user login and verify permission.
+// Force user login — superadmin only.
 require_login();
-$context = context_system::instance();
-if (!is_siteadmin() && !has_capability('moodle/site:config', $context) && !has_capability('local/admin_functions:view', $context)) {
-    require_capability('moodle/site:config', $context);
+if (!is_siteadmin()) {
+    echo json_encode(array('success' => false, 'error' => 'Access denied. Superadmin only.'));
+    exit;
 }
+$context = context_system::instance();
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -56,7 +57,7 @@ function get_table_description_ajax($tablename) {
 
 try {
     if ($action === 'toggle_debug') {
-        if (!is_siteadmin() && !has_capability('moodle/site:config', $context)) {
+        if (!is_siteadmin()) {
             echo json_encode(array('success' => false, 'error' => 'Only administrators can toggle debug mode.'));
             exit;
         }
@@ -72,7 +73,7 @@ try {
         exit;
 
     } else if ($action === 'save_custom_tables') {
-        if (!is_siteadmin() && !has_capability('moodle/site:config', $context)) {
+        if (!is_siteadmin()) {
             echo json_encode(array('success' => false, 'error' => 'Only administrators can select custom tables.'));
             exit;
         }
