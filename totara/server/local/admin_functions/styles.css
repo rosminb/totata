@@ -466,9 +466,10 @@
 .font-size-13 { font-size: 13px !important; }
 .font-size-12 { font-size: 12px !important; }
 
-/* =====================================================
-   Table Selector Modal — Checkbox Item Alignment
-   ===================================================== */
+/* Checkbox Container Padding */
+#ts-checkbox-container {
+    padding: 15px !important;
+}
 
 /* Each col wrapper: no extra padding, tight fit */
 .ts-table-item {
