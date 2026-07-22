@@ -1,7 +1,7 @@
 <?php
 /**
  * AJAX endpoint for local_admin_functions plugin.
- * Returns table rows, pagination, debug status, and detailed SQL error reporting.
+ * Returns table rows, pagination, debug status, custom table selections, and detailed SQL error reporting.
  *
  * @package    local_admin_functions
  * @copyright  2026 Rosmin Babu
@@ -56,8 +56,8 @@ function get_table_description_ajax($tablename) {
 
 try {
     if ($action === 'toggle_debug') {
-        if (!is_siteadmin()) {
-            echo json_encode(array('success' => false, 'error' => 'Only site administrators can toggle debug mode.'));
+        if (!is_siteadmin() && !has_capability('moodle/site:config', $context)) {
+            echo json_encode(array('success' => false, 'error' => 'Only administrators can toggle debug mode.'));
             exit;
         }
         $current = local_admin_functions_is_debug_active();
@@ -71,15 +71,43 @@ try {
         ));
         exit;
 
+    } else if ($action === 'save_custom_tables') {
+        if (!is_siteadmin() && !has_capability('moodle/site:config', $context)) {
+            echo json_encode(array('success' => false, 'error' => 'Only administrators can select custom tables.'));
+            exit;
+        }
+        $tables_raw = optional_param('tables', '[]', PARAM_RAW);
+        $decoded = json_decode($tables_raw, true);
+        if (!is_array($decoded)) {
+            $decoded = json_decode(stripslashes($tables_raw), true);
+        }
+        if (!is_array($decoded)) {
+            $decoded = array();
+        }
+
+        local_admin_functions_save_custom_tables($decoded);
+
+        echo json_encode(array(
+            'success' => true,
+            'message' => 'Custom table selection saved successfully.',
+            'count' => count($decoded)
+        ));
+        exit;
+
     } else if ($action === 'fetch_tables') {
         $search        = optional_param('search', '', PARAM_TEXT);
         $status_filter = optional_param('status_filter', '', PARAM_ALPHA);
         $created_by    = optional_param('created_by', '', PARAM_ALPHA);
+        $scope         = optional_param('scope', 'custom', PARAM_ALPHA);
         $page          = optional_param('page', 1, PARAM_INT);
         $perpage       = 100;
 
-        $all_tables = $DB->get_tables();
-        sort($all_tables);
+        if ($scope === 'all') {
+            $all_tables = $DB->get_tables();
+            sort($all_tables);
+        } else {
+            $all_tables = local_admin_functions_get_custom_tables();
+        }
 
         $filtered_tables = $all_tables;
 
@@ -149,7 +177,8 @@ try {
                 'tab' => 'tables', 
                 'search' => $search, 
                 'status_filter' => $status_filter, 
-                'created_by' => $created_by
+                'created_by' => $created_by,
+                'scope' => $scope
             ));
             echo $OUTPUT->paging_bar($total_tables, $page, $perpage, $baseurl);
         }

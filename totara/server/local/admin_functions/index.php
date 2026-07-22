@@ -1,7 +1,7 @@
 <?php
 /**
  * Local plugin admin_functions: Database explorer and SQL query runner.
- * Custom Listing Page with 2 tabs, Admin Debug Confirmation Modal, and Detailed SQL Error Reporting.
+ * Custom Listing Page with 2 tabs, Custom Tables filtering, Super Admin Table Selector Modal, and Admin Debug.
  *
  * @package    local_admin_functions
  * @copyright  2026 Rosmin Babu
@@ -24,6 +24,7 @@ if (!is_siteadmin() && !has_capability('moodle/site:config', $context) && !has_c
 $tab     = optional_param('tab', 'tables', PARAM_ALPHA);
 $page    = optional_param('page', 1, PARAM_INT);
 $search  = optional_param('search', '', PARAM_TEXT);
+$scope   = optional_param('scope', 'custom', PARAM_ALPHA);
 $sql     = trim(optional_param('sql', '', PARAM_RAW));
 $perpage = 100;
 
@@ -44,9 +45,17 @@ $PAGE->requires->js(new moodle_url('/local/admin_functions/assets/js/admin_funct
 
 echo $OUTPUT->header();
 
-// Fetch all database tables.
-$all_tables = $DB->get_tables();
-sort($all_tables);
+// Fetch all database tables and custom configured tables.
+$db_all_tables = $DB->get_tables();
+sort($db_all_tables);
+
+$custom_tables_list = local_admin_functions_get_custom_tables();
+
+if ($scope === 'all') {
+    $all_tables = $db_all_tables;
+} else {
+    $all_tables = $custom_tables_list;
+}
 
 // Helper function to return friendly description for Totara database tables.
 function get_table_description_index($tablename) {
@@ -78,16 +87,21 @@ function get_table_description_index($tablename) {
 }
 
 $debug_active = local_admin_functions_is_debug_active();
+$is_admin_user = is_siteadmin() || has_capability('moodle/site:config', $context);
 ?>
 
-<!-- 1. Page Header Row with Admin Debug Switch -->
+<!-- 1. Page Header Row with Admin Controls -->
 <div class="page-header-row">
     <div>
         <h2 class="page-header-title">Tables</h2>
-        <p class="page-header-subtitle">Manage and view your table records</p>
+        <p class="page-header-subtitle">Manage and view your database table records</p>
     </div>
     <div class="d-flex align-items-center gap-3">
-        <?php if (is_siteadmin()): ?>
+        <?php if ($is_admin_user): ?>
+            <button type="button" class="btn btn-primary font-weight-bold shadow-sm" id="btn-open-table-selector" style="font-size: 14px; border-radius: 8px; padding: 0.6rem 1.25rem;">
+                <i class="fa fa-th-list mr-1"></i> Select Custom Tables
+            </button>
+
             <div class="admin-debug-toggle-container">
                 <span class="admin-debug-toggle-label"><i class="fa fa-bug mr-1"></i> Debug Mode:</span>
                 <label class="admin-debug-switch">
@@ -137,6 +151,11 @@ $debug_active = local_admin_functions_is_debug_active();
                                autocomplete="off">
                     </div>
 
+                    <select name="scope" id="table-scope-select" class="custom-select filter-select font-weight-bold" style="min-width: 200px; color: #2563eb;">
+                        <option value="custom" <?php echo ($scope === 'custom') ? 'selected' : ''; ?>>Custom Tables (Default)</option>
+                        <option value="all" <?php echo ($scope === 'all') ? 'selected' : ''; ?>>All Database Tables</option>
+                    </select>
+
                     <select name="table_select" class="custom-select filter-select" onchange="if(this.value) window.location.href='table_data.php?table='+this.value;">
                         <option value="">Select Table</option>
                         <?php foreach ($all_tables as $t): ?>
@@ -148,12 +167,6 @@ $debug_active = local_admin_functions_is_debug_active();
                         <option value="">Status</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
-                    </select>
-
-                    <select name="created_by" class="custom-select filter-select">
-                        <option value="">Created By</option>
-                        <option value="admin">Admin</option>
-                        <option value="system">System</option>
                     </select>
 
                     <button type="submit" class="btn btn-filter-action">
@@ -200,7 +213,11 @@ $debug_active = local_admin_functions_is_debug_active();
                         <tbody>
                             <?php
                             if ($total_tables === 0) {
-                                echo '<tr><td colspan="8" class="text-center py-5 text-muted font-italic">No database tables match your search query.</td></tr>';
+                                echo '<tr><td colspan="8" class="text-center py-5 text-muted font-italic">No database tables match your filter criteria. ';
+                                if ($is_admin_user) {
+                                    echo '<button type="button" class="btn btn-link p-0 font-weight-bold" onclick="document.getElementById(\'btn-open-table-selector\').click();">Select Custom Tables</button>';
+                                }
+                                echo '</td></tr>';
                             } else {
                                 foreach ($tables_slice as $index => $tbl) {
                                     try {
@@ -244,7 +261,7 @@ $debug_active = local_admin_functions_is_debug_active();
                     <div id="tables-pagination-container">
                         <?php
                         if ($total_tables > 0) {
-                            $baseurl_tables = new moodle_url('/local/admin_functions/index.php', array('tab' => 'tables', 'search' => $search));
+                            $baseurl_tables = new moodle_url('/local/admin_functions/index.php', array('tab' => 'tables', 'search' => $search, 'scope' => $scope));
                             echo $OUTPUT->paging_bar($total_tables, ($tab === 'tables') ? $page : 1, $perpage, $baseurl_tables);
                         }
                         ?>
@@ -416,7 +433,7 @@ $debug_active = local_admin_functions_is_debug_active();
 </div>
 
 <!-- Admin Debug Confirmation Modal -->
-<?php if (is_siteadmin()): ?>
+<?php if ($is_admin_user): ?>
 <div class="modal fade" id="debug-confirm-modal" tabindex="-1" role="dialog" aria-labelledby="debugConfirmModalLabel" aria-hidden="true" style="display: none;">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
@@ -446,6 +463,71 @@ $debug_active = local_admin_functions_is_debug_active();
     </div>
 </div>
 <div class="modal-backdrop fade" id="debug-modal-backdrop" style="display: none;"></div>
+
+<!-- Super Admin Table Selector Modal -->
+<div class="modal fade" id="table-selector-modal" tabindex="-1" role="dialog" aria-labelledby="tableSelectorModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center text-white mb-0" id="tableSelectorModalLabel">
+                    <i class="fa fa-th-list mr-2"></i> Select Custom Tables to List
+                </h5>
+                <button type="button" class="close text-white" id="ts-modal-close-x" aria-label="Close" style="opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-dark" style="font-size: 14px;">
+                <p class="text-muted small mb-3">
+                    Check the database tables you want to feature in the <strong>Custom Tables</strong> view. Site administrators can select any combination of tables.
+                </p>
+
+                <!-- Search & Quick Selection Controls -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div class="position-relative flex-grow-1" style="min-width: 250px;">
+                        <i class="fa fa-search position-absolute text-muted" style="left: 12px; top: 12px;"></i>
+                        <input type="text" id="ts-modal-search" class="form-control" placeholder="Search tables..." style="padding-left: 34px; height: 40px; border-radius: 8px;">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" id="ts-select-custom-only">Select Custom/Local Only</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ts-select-all">Select All</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="ts-deselect-all">Clear All</button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Checkbox List -->
+                <div class="p-3 border rounded bg-light" style="max-height: 380px; overflow-y: auto;" id="ts-checkbox-container">
+                    <div class="row">
+                        <?php foreach ($db_all_tables as $tbl): 
+                            $is_checked = in_array($tbl, $custom_tables_list);
+                            $is_custom_prefix = (strpos($tbl, 'local_') === 0 || strpos($tbl, 'custom_') === 0 || strpos($tbl, 'activemq_') === 0);
+                        ?>
+                            <div class="col-md-4 col-sm-6 mb-2 ts-table-item" data-table-name="<?php echo s($tbl); ?>" data-is-custom="<?php echo $is_custom_prefix ? '1' : '0'; ?>">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input ts-table-checkbox" id="ts-chk-<?php echo s($tbl); ?>" value="<?php echo s($tbl); ?>" <?php echo $is_checked ? 'checked' : ''; ?>>
+                                    <label class="custom-control-label font-size-13 text-truncate w-100 <?php echo $is_custom_prefix ? 'font-weight-bold text-primary' : 'text-dark'; ?>" for="ts-chk-<?php echo s($tbl); ?>" title="<?php echo s($tbl); ?>">
+                                        <?php echo s($tbl); ?>
+                                    </label>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-3 px-4 d-flex justify-content-between">
+                <span class="text-muted small" id="ts-selected-count-badge">
+                    Selected: <strong><?php echo count($custom_tables_list); ?></strong> of <?php echo count($db_all_tables); ?> tables
+                </span>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary px-4" id="ts-modal-btn-cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4 font-weight-bold shadow-sm" id="ts-modal-btn-save">
+                        <i class="fa fa-save mr-1"></i> Save Selected Tables
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade" id="ts-modal-backdrop" style="display: none;"></div>
 <?php endif; ?>
 
 <?php

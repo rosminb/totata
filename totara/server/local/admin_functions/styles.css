@@ -1,7 +1,7 @@
 /**
  * Modern Clean UI Styles for local_admin_functions plugin.
  * Base font-size updated to 14px.
- * Enabled smooth horizontal scrolling for wide database tables.
+ * Enabled smooth horizontal scrolling for wide database tables and high z-index modal dialogs.
  */
 
 /* Page Header Bar */
@@ -405,7 +405,15 @@
     color: #2563eb !important;
 }
 
-/* SQL Error Detail Box */
+/* Modal Dialog Layering & Typography Overrides */
+#table-selector-modal, #debug-confirm-modal {
+    z-index: 100050 !important;
+}
+
+#ts-modal-backdrop, #debug-modal-backdrop {
+    z-index: 100040 !important;
+}
+
 .font-size-14 { font-size: 14px !important; }
 .font-size-13 { font-size: 13px !important; }
 .font-size-12 { font-size: 12px !important; }

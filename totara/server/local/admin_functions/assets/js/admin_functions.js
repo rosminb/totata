@@ -1,6 +1,6 @@
 /**
  * Interactive JS asset for local_admin_functions plugin.
- * Performs live AJAX table searching, column filtering, Admin Debug modal confirmation toggle, and SQL query execution.
+ * Performs live AJAX table searching, column filtering, Admin Debug modal confirmation toggle, Super Admin Table Selector Modal, and SQL query execution.
  *
  * @package    local_admin_functions
  * @copyright  2026 Rosmin Babu
@@ -62,14 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
         debugToggle.addEventListener('click', function(e) {
             e.preventDefault();
             const willEnable = !this.checked;
-            this.checked = !willEnable; // Hold current state until confirmed
+            this.checked = !willEnable;
             openDebugModal(willEnable);
         });
     }
 
     if (btnCancel) btnCancel.addEventListener('click', function() { closeDebugModal(true); });
     if (btnCloseX) btnCloseX.addEventListener('click', function() { closeDebugModal(true); });
-    if (debugBackdrop) debugBackdrop.addEventListener('click', function() { closeDebugModal(true); });
 
     if (btnConfirm) {
         btnConfirm.addEventListener('click', function() {
@@ -95,7 +94,149 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Level 1: Tables List AJAX Handler
+    // 2. Super Admin Table Selector Modal Handler with Event Delegation
+    const tsModal = document.getElementById('table-selector-modal');
+    const tsBackdrop = document.getElementById('ts-modal-backdrop');
+    const tsCloseX = document.getElementById('ts-modal-close-x');
+    const tsCancel = document.getElementById('ts-modal-btn-cancel');
+    const tsSave = document.getElementById('ts-modal-btn-save');
+    const tsSearch = document.getElementById('ts-modal-search');
+    const tsSelectCustomOnly = document.getElementById('ts-select-custom-only');
+    const tsSelectAll = document.getElementById('ts-select-all');
+    const tsDeselectAll = document.getElementById('ts-deselect-all');
+    const tsCountBadge = document.getElementById('ts-selected-count-badge');
+
+    function openTsModal() {
+        if (tsModal) {
+            tsModal.style.display = 'block';
+            tsModal.classList.add('show');
+        }
+        if (tsBackdrop) {
+            tsBackdrop.style.display = 'block';
+            tsBackdrop.classList.add('show');
+        }
+        updateTsCount();
+    }
+
+    function closeTsModal() {
+        if (tsModal) {
+            tsModal.style.display = 'none';
+            tsModal.classList.remove('show');
+        }
+        if (tsBackdrop) {
+            tsBackdrop.style.display = 'none';
+            tsBackdrop.classList.remove('show');
+        }
+    }
+
+    function updateTsCount() {
+        const totalItems = document.querySelectorAll('.ts-table-checkbox').length;
+        const checkedItems = document.querySelectorAll('.ts-table-checkbox:checked').length;
+        if (tsCountBadge) {
+            tsCountBadge.innerHTML = 'Selected: <strong>' + checkedItems + '</strong> of ' + totalItems + ' tables';
+        }
+    }
+
+    // Delegation for opening modal
+    document.addEventListener('click', function(e) {
+        const openBtn = e.target.closest('#btn-open-table-selector');
+        if (openBtn) {
+            e.preventDefault();
+            openTsModal();
+        }
+    });
+
+    if (tsCloseX) tsCloseX.addEventListener('click', closeTsModal);
+    if (tsCancel) tsCancel.addEventListener('click', closeTsModal);
+    if (tsBackdrop) tsBackdrop.addEventListener('click', closeTsModal);
+
+    // Live search inside Table Selector Modal
+    if (tsSearch) {
+        tsSearch.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            document.querySelectorAll('.ts-table-item').forEach(item => {
+                const name = item.getAttribute('data-table-name') || '';
+                if (query === '' || name.toLowerCase().includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Quick selection buttons
+    if (tsSelectCustomOnly) {
+        tsSelectCustomOnly.addEventListener('click', function() {
+            document.querySelectorAll('.ts-table-item').forEach(item => {
+                const isCustom = item.getAttribute('data-is-custom') === '1';
+                const chk = item.querySelector('.ts-table-checkbox');
+                if (chk) chk.checked = isCustom;
+            });
+            updateTsCount();
+        });
+    }
+
+    if (tsSelectAll) {
+        tsSelectAll.addEventListener('click', function() {
+            document.querySelectorAll('.ts-table-checkbox').forEach(chk => chk.checked = true);
+            updateTsCount();
+        });
+    }
+
+    if (tsDeselectAll) {
+        tsDeselectAll.addEventListener('click', function() {
+            document.querySelectorAll('.ts-table-checkbox').forEach(chk => chk.checked = false);
+            updateTsCount();
+        });
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ts-table-checkbox')) {
+            updateTsCount();
+        }
+    });
+
+    // Save Selected Tables via AJAX
+    if (tsSave) {
+        tsSave.addEventListener('click', function() {
+            const selected = [];
+            document.querySelectorAll('.ts-table-checkbox:checked').forEach(chk => {
+                selected.push(chk.value);
+            });
+
+            tsSave.disabled = true;
+            tsSave.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Saving...';
+
+            const formData = new FormData();
+            formData.append('action', 'save_custom_tables');
+            formData.append('tables', JSON.stringify(selected));
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                tsSave.disabled = false;
+                tsSave.innerHTML = '<i class="fa fa-save mr-1"></i> Save Selected Tables';
+                if (res.success) {
+                    closeTsModal();
+                    window.location.reload();
+                } else {
+                    alert(res.error || 'Failed to save table selection.');
+                }
+            })
+            .catch(err => {
+                tsSave.disabled = false;
+                tsSave.innerHTML = '<i class="fa fa-save mr-1"></i> Save Selected Tables';
+                console.error('Save tables error:', err);
+                alert('An error occurred while saving table selection.');
+            });
+        });
+    }
+
+    // 3. Level 1: Tables List AJAX Handler
     if (appLevel1) {
         const tbody1 = document.querySelector('#db-tables-list tbody');
         const summary1 = document.getElementById('tables-summary-container');
@@ -109,10 +250,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('table-search-input');
             const statusSelect = document.querySelector('select[name="status_filter"]');
             const createdBySelect = document.querySelector('select[name="created_by"]');
+            const scopeSelect = document.getElementById('table-scope-select');
 
             const search = searchInput ? searchInput.value.trim() : '';
             const status_filter = statusSelect ? statusSelect.value : '';
             const created_by = createdBySelect ? createdBySelect.value : '';
+            const scope = scopeSelect ? scopeSelect.value : 'custom';
 
             tbody1.style.opacity = '0.4';
 
@@ -121,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 search: search,
                 status_filter: status_filter,
                 created_by: created_by,
+                scope: scope,
                 page: page
             });
 
@@ -173,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. Level 2: Table Data Explorer AJAX Handler
+    // 4. Level 2: Table Data Explorer AJAX Handler
     const appLevel2 = document.getElementById('table-records-explorer-app');
     if (appLevel2) {
         const ajaxUrl2 = appLevel2.getAttribute('data-ajax-url') || 'ajax.php';
@@ -248,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 4. SQL Runner AJAX Execution & Error Rendering
+    // 5. SQL Runner AJAX Execution & Error Rendering
     const sqlForm = document.getElementById('sql-runner-form');
     const sqlResultsContainer = document.getElementById('sql-results-container');
     if (sqlForm && sqlResultsContainer) {

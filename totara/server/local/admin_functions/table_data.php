@@ -26,9 +26,13 @@ $perpage   = 100;
 
 // Security check: Verify if table exists in DB.
 $all_tables = $DB->get_tables();
+sort($all_tables);
+
 if (!in_array($tablename, $all_tables)) {
     print_error('invalidtablename', 'local_admin_functions');
 }
+
+$custom_tables = local_admin_functions_get_custom_tables();
 
 // Set up page URL and properties.
 $PAGE->set_url(new moodle_url('/local/admin_functions/table_data.php', array('table' => $tablename)));
@@ -106,11 +110,20 @@ $end_index = min($offset + count($records), $total_records);
             
             <div class="d-flex align-items-center gap-2 flex-wrap w-100">
                 <span class="font-weight-bold text-dark mr-2" style="font-size: 14px;">Quick Table Switch:</span>
-                <select name="switch_table" class="custom-select filter-select" style="min-width: 220px;" onchange="if(this.value) window.location.href='table_data.php?table='+this.value;">
+                <select name="switch_table" class="custom-select filter-select" style="min-width: 250px;" onchange="if(this.value) window.location.href='table_data.php?table='+this.value;">
                     <option value="">Select Table...</option>
-                    <?php foreach ($all_tables as $t): ?>
-                        <option value="<?php echo s($t); ?>" <?php echo ($tablename === $t) ? 'selected' : ''; ?>><?php echo s($t); ?></option>
-                    <?php endforeach; ?>
+                    <optgroup label="Custom / Featured Tables">
+                        <?php foreach ($custom_tables as $ct): ?>
+                            <option value="<?php echo s($ct); ?>" <?php echo ($tablename === $ct) ? 'selected' : ''; ?>>★ <?php echo s($ct); ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <optgroup label="All Database Tables">
+                        <?php foreach ($all_tables as $t): ?>
+                            <?php if (!in_array($t, $custom_tables)): ?>
+                                <option value="<?php echo s($t); ?>" <?php echo ($tablename === $t) ? 'selected' : ''; ?>><?php echo s($t); ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </optgroup>
                 </select>
 
                 <?php if (!empty($active_filters)): ?>
