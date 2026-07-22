@@ -416,6 +416,76 @@
 }
 
 
+
+
 .font-size-14 { font-size: 14px !important; }
 .font-size-13 { font-size: 13px !important; }
 .font-size-12 { font-size: 12px !important; }
+
+/* =====================================================
+   Table Selector Modal — Checkbox Item Alignment
+   ===================================================== */
+
+/* Each col wrapper: no extra padding, tight fit */
+.ts-table-item {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    margin-bottom: 6px !important;
+}
+
+/* Override Bootstrap custom-control to use flexbox for perfect alignment */
+.ts-table-item .custom-control.custom-checkbox {
+    display: flex !important;
+    align-items: center !important;
+    padding-left: 0 !important;
+    min-height: unset !important;
+}
+
+/* The actual checkbox input */
+.ts-table-item .custom-control-input {
+    position: static !important;
+    flex-shrink: 0 !important;
+    width: 15px !important;
+    height: 15px !important;
+    margin-right: 7px !important;
+    margin-top: 0 !important;
+    cursor: pointer !important;
+}
+
+/* The label — sits right next to the checkbox */
+.ts-table-item .custom-control-label {
+    position: static !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: calc(100% - 24px) !important;
+    padding-left: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Remove Bootstrap's ::before / ::after pseudo-elements (the custom checkbox box) */
+.ts-table-item .custom-control-label::before,
+.ts-table-item .custom-control-label::after {
+    display: none !important;
+}
+
+/* Custom/Local tables → Blue */
+.ts-table-item .custom-control-label.text-primary {
+    color: #2563eb !important;
+    font-weight: 600 !important;
+}
+
+/* Standard/Core tables → Grey */
+.ts-table-item .custom-control-label.text-dark {
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+/* Hover highlight on the whole row */
+.ts-table-item:hover .custom-control-label {
+    opacity: 0.85;
+}
+
