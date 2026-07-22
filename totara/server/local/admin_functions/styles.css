@@ -405,13 +405,36 @@
     color: #2563eb !important;
 }
 
-/* Modal Dialog Layering & Typography Overrides */
-#table-selector-modal, #debug-confirm-modal {
+/* Custom AF-Modal: replaces Bootstrap .modal.fade which fights with JS display:block */
+.af-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    outline: 0 !important;
     z-index: 100050 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: none;
 }
 
+.af-modal .modal-dialog {
+    position: relative !important;
+    margin: 1.75rem auto !important;
+    pointer-events: auto !important;
+}
+
+.af-modal .modal-dialog.modal-dialog-centered {
+    display: flex !important;
+    align-items: center !important;
+    min-height: calc(100% - 3.5rem) !important;
+}
+
+/* Hide the separate backdrop elements since af-modal handles its own backdrop */
 #ts-modal-backdrop, #debug-modal-backdrop {
-    z-index: 100040 !important;
+    display: none !important;
 }
 
 .font-size-14 { font-size: 14px !important; }

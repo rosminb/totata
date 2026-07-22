@@ -433,7 +433,7 @@ $is_admin_user = is_siteadmin() || has_capability('moodle/site:config', $context
 
 <!-- Admin Debug Confirmation Modal -->
 <?php if ($is_admin_user): ?>
-<div class="modal fade" id="debug-confirm-modal" tabindex="-1" role="dialog" aria-labelledby="debugConfirmModalLabel" aria-hidden="true" style="display: none;">
+<div class="af-modal" id="debug-confirm-modal" tabindex="-1" role="dialog" aria-labelledby="debugConfirmModalLabel" style="display: none;">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div class="modal-header bg-dark text-white py-3">
@@ -464,7 +464,7 @@ $is_admin_user = is_siteadmin() || has_capability('moodle/site:config', $context
 <div class="modal-backdrop fade" id="debug-modal-backdrop" style="display: none;"></div>
 
 <!-- Super Admin Table Selector Modal -->
-<div class="modal fade" id="table-selector-modal" tabindex="-1" role="dialog" aria-labelledby="tableSelectorModalLabel" aria-hidden="true" style="display: none;">
+<div class="af-modal" id="table-selector-modal" tabindex="-1" role="dialog" aria-labelledby="tableSelectorModalLabel" style="display: none;">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
             <div class="modal-header bg-primary text-white py-3">
@@ -571,13 +571,11 @@ $ajax_url = (new moodle_url('/local/admin_functions/ajax.php'))->out(false);
                 btnConfirm.className = enable ? 'btn btn-danger px-4 font-weight-bold' : 'btn btn-primary px-4 font-weight-bold';
                 btnConfirm.innerHTML = enable ? '<i class="fa fa-check mr-1"></i> Enable All Errors' : '<i class="fa fa-check mr-1"></i> Disable Debug';
             }
-            if (debugModal)    { debugModal.style.display = 'block';    debugModal.classList.add('show'); }
-            if (debugBackdrop) { debugBackdrop.style.display = 'block'; debugBackdrop.classList.add('show'); }
+            if (debugModal) { debugModal.style.display = 'block'; }
         }
 
         function closeDebugModal(revertToggle) {
-            if (debugModal)    { debugModal.style.display = 'none';    debugModal.classList.remove('show'); }
-            if (debugBackdrop) { debugBackdrop.style.display = 'none'; debugBackdrop.classList.remove('show'); }
+            if (debugModal) { debugModal.style.display = 'none'; }
             if (revertToggle && debugToggle) { debugToggle.checked = !targetDebugState; }
         }
 
@@ -637,14 +635,12 @@ $ajax_url = (new moodle_url('/local/admin_functions/ajax.php'))->out(false);
         }
 
         function openTsModal() {
-            if (tsModal)    { tsModal.style.display = 'block';    tsModal.classList.add('show'); }
-            if (tsBackdrop) { tsBackdrop.style.display = 'block'; tsBackdrop.classList.add('show'); }
+            if (tsModal) { tsModal.style.display = 'block'; }
             updateTsCount();
         }
 
         function closeTsModal() {
-            if (tsModal)    { tsModal.style.display = 'none';    tsModal.classList.remove('show'); }
-            if (tsBackdrop) { tsBackdrop.style.display = 'none'; tsBackdrop.classList.remove('show'); }
+            if (tsModal) { tsModal.style.display = 'none'; }
         }
 
         function updateTsCount() {
@@ -655,9 +651,19 @@ $ajax_url = (new moodle_url('/local/admin_functions/ajax.php'))->out(false);
             }
         }
 
-        if (tsCloseX)   tsCloseX.addEventListener('click', closeTsModal);
-        if (tsCancel)   tsCancel.addEventListener('click', closeTsModal);
-        if (tsBackdrop) tsBackdrop.addEventListener('click', closeTsModal);
+        if (tsCloseX)  tsCloseX.addEventListener('click', closeTsModal);
+        if (tsCancel)  tsCancel.addEventListener('click', closeTsModal);
+        // Close when clicking the backdrop (the af-modal overlay itself)
+        if (tsModal) {
+            tsModal.addEventListener('click', function(e) {
+                if (e.target === tsModal) { closeTsModal(); }
+            });
+        }
+        if (debugModal) {
+            debugModal.addEventListener('click', function(e) {
+                if (e.target === debugModal) { closeDebugModal(true); }
+            });
+        }
 
         if (tsSearch) {
             tsSearch.addEventListener('input', function() {
