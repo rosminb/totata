@@ -410,7 +410,8 @@
 #debug-confirm-modal,
 #log-detail-modal,
 #task-log-modal,
-#task-schedule-modal {
+#task-schedule-modal,
+#af-notification-modal {
     z-index: 100050 !important;
 }
 
@@ -418,7 +419,8 @@
 #debug-confirm-modal .modal-header,
 #log-detail-modal .modal-header,
 #task-log-modal .modal-header,
-#task-schedule-modal .modal-header {
+#task-schedule-modal .modal-header,
+#af-notification-modal .modal-header {
     background-color: #0b1528 !important;
     padding: 12px 20px !important;
     min-height: auto !important;

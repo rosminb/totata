@@ -48,8 +48,44 @@ $ajax_url = (new moodle_url('/local/admin_functions/ajax.php'))->out(false);
 // Inject all JS via Totara's AMD system using jQuery (Bootstrap 4 needs it).
 $PAGE->requires->js_init_code("
 require(['jquery'], function($) {
-
     var ajaxUrl = " . json_encode($ajax_url) . ";
+
+    function showAdminModal(title, message, details, type) {
+        var \$modal = \$('#af-notification-modal');
+        var \$header = \$('#af-notification-header');
+        var \$icon = \$('#af-notification-icon');
+        var \$title = \$('#af-notification-title');
+        var \$msg = \$('#af-notification-message');
+        var \$detailsWrap = \$('#af-notification-details-wrapper');
+        var \$details = \$('#af-notification-details');
+
+        \$title.text(title || 'Notification');
+        \$msg.html(message || '');
+
+        \$icon.attr('class', 'fa mr-2 text-white');
+        if (type === 'success') {
+            \$header.css('background-color', '#10b981');
+            \$icon.addClass('fa-check-circle');
+        } else if (type === 'error') {
+            \$header.css('background-color', '#ef4444');
+            \$icon.addClass('fa-exclamation-triangle');
+        } else if (type === 'warning') {
+            \$header.css('background-color', '#f59e0b');
+            \$icon.addClass('fa-exclamation-circle');
+        } else {
+            \$header.css('background-color', '#0b1528');
+            \$icon.addClass('fa-info-circle');
+        }
+
+        if (details) {
+            \$details.text(details);
+            \$detailsWrap.show();
+        } else {
+            \$detailsWrap.hide();
+        }
+
+        \$modal.modal('show');
+    }
 
     // === 1. Bootstrap modal for Table Selector ===
     // Update the selected count badge when the modal opens.
@@ -117,13 +153,13 @@ require(['jquery'], function($) {
                     \$('#table-selector-modal').modal('hide');
                     window.location.reload();
                 } else {
-                    alert(res.error || 'Failed to save table selection.');
+                    showAdminModal('Save Failed', res.error || 'Failed to save table selection.', null, 'error');
                 }
             })
             .catch(function(err) {
                 \$btn.prop('disabled', false).html('<i class=\"fa fa-save mr-1\"></i> Save Selected Tables');
                 console.error('Save tables error:', err);
-                alert('An error occurred while saving table selection.');
+                showAdminModal('Save Error', 'An error occurred while saving table selection.', null, 'error');
             });
     });
 
@@ -169,7 +205,7 @@ require(['jquery'], function($) {
                     \$('#debug-confirm-modal').off('hide.bs.modal');
                     window.location.reload();
                 } else {
-                    alert(res.error || 'Failed to update Debug Mode.');
+                    showAdminModal('Debug Mode Error', res.error || 'Failed to update Debug Mode.', null, 'error');
                     \$('#debug-confirm-modal').modal('hide');
                 }
             })
@@ -592,16 +628,16 @@ require(['jquery'], function($) {
             .then(function(res) {
                 \$btn.prop('disabled', false).html(origHtml);
                 if (res.success) {
-                    alert('⚡ Task Executed Successfully!\\nDuration: ' + res.duration + '\\n\\nOutput:\\n' + res.output);
+                    showAdminModal('Task Executed Successfully', '⚡ Task finished execution in <strong>' + res.duration + '</strong>', res.output, 'success');
                     fetchTasks(currentTaskPage);
                 } else {
-                    alert('❌ Task Execution Failed: ' + (res.error || 'Unknown error'));
+                    showAdminModal('Task Execution Failed', '❌ ' + (res.error || 'Unknown error'), null, 'error');
                     fetchTasks(currentTaskPage);
                 }
             })
             .catch(function(err) {
                 \$btn.prop('disabled', false).html(origHtml);
-                alert('An error occurred while attempting to run task.');
+                showAdminModal('Task Error', 'An error occurred while attempting to run task.', null, 'error');
             });
     });
 
@@ -649,7 +685,11 @@ require(['jquery'], function($) {
                 fetch(ajaxUrl, { method: 'POST', body: formData })
                     .then(function(r) { return r.json(); })
                     .then(function(r) {
-                        alert(r.success ? '⚡ Task Executed!\\nDuration: ' + r.duration : '❌ Task Failed: ' + r.error);
+                        if (r.success) {
+                            showAdminModal('Task Executed', '⚡ Task executed in <strong>' + r.duration + '</strong>', r.output, 'success');
+                        } else {
+                            showAdminModal('Task Failed', '❌ ' + (r.error || 'Unknown error'), null, 'error');
+                        }
                         fetchTasks(currentTaskPage);
                     });
             }
@@ -695,12 +735,12 @@ require(['jquery'], function($) {
                     \$('#task-schedule-modal').modal('hide');
                     fetchTasks(currentTaskPage);
                 } else {
-                    alert('Failed to save schedule: ' + (res.error || 'Unknown error'));
+                    showAdminModal('Schedule Error', 'Failed to save schedule: ' + (res.error || 'Unknown error'), null, 'error');
                 }
             })
             .catch(function(err) {
                 \$saveBtn.prop('disabled', false).html(origHtml);
-                alert('An error occurred while saving schedule.');
+                showAdminModal('Schedule Error', 'An error occurred while saving schedule.', null, 'error');
             });
     });
 
@@ -1555,6 +1595,35 @@ $log_components = local_admin_functions_get_log_components();
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Bootstrap 4 Universal Notification & Alert Modal
+     ============================================================ -->
+<div class="modal fade" id="af-notification-modal" tabindex="-1" role="dialog" aria-labelledby="afNotificationModalLabel" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+            <div class="modal-header" id="af-notification-header" style="background: #0b1528; padding: 12px 20px;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="afNotificationModalLabel" style="font-size: 15px; color: #ffffff;">
+                    <i class="fa fa-info-circle mr-2 text-white" id="af-notification-icon"></i>
+                    <span id="af-notification-title">Notification</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="color: #ffffff; opacity: 0.9; font-size: 18px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-dark" style="font-size: 14px;">
+                <div id="af-notification-message" class="font-weight-medium mb-3"></div>
+                <div id="af-notification-details-wrapper" style="display: none;">
+                    <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1" id="af-notification-details-label">Output Details</label>
+                    <pre class="bg-dark text-white p-3 rounded font-monospace font-size-12 m-0" style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;" id="af-notification-details"></pre>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4">
+                <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
