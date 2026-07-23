@@ -127,13 +127,13 @@ try {
         }
 
         if ($search !== '') {
-            $where[] = "(l.eventname " . $DB->sql_like('l.eventname', ':s1', false) . "
-                        OR l.component " . $DB->sql_like('l.component', ':s2', false) . "
-                        OR l.target " . $DB->sql_like('l.target', ':s3', false) . "
-                        OR l.ip " . $DB->sql_like('l.ip', ':s4', false) . "
-                        OR u.firstname " . $DB->sql_like('u.firstname', ':s5', false) . "
-                        OR u.lastname " . $DB->sql_like('u.lastname', ':s6', false) . "
-                        OR u.username " . $DB->sql_like('u.username', ':s7', false) . ")";
+            $where[] = "(" . $DB->sql_like('l.eventname', ':s1', false) . "
+                        OR " . $DB->sql_like('l.component', ':s2', false) . "
+                        OR " . $DB->sql_like('l.target', ':s3', false) . "
+                        OR " . $DB->sql_like('l.ip', ':s4', false) . "
+                        OR " . $DB->sql_like('u.firstname', ':s5', false) . "
+                        OR " . $DB->sql_like('u.lastname', ':s6', false) . "
+                        OR " . $DB->sql_like('u.username', ':s7', false) . ")";
             $params['s1'] = '%' . $search . '%';
             $params['s2'] = '%' . $search . '%';
             $params['s3'] = '%' . $search . '%';
@@ -174,7 +174,7 @@ try {
                 $where[] = "l.userid = :ufid";
                 $params['ufid'] = (int)$userfilter;
             } else {
-                $where[] = "(u.username " . $DB->sql_like('u.username', ':uf1', false) . " OR u.firstname " . $DB->sql_like('u.firstname', ':uf2', false) . " OR u.lastname " . $DB->sql_like('u.lastname', ':uf3', false) . ")";
+                $where[] = "(" . $DB->sql_like('u.username', ':uf1', false) . " OR " . $DB->sql_like('u.firstname', ':uf2', false) . " OR " . $DB->sql_like('u.lastname', ':uf3', false) . ")";
                 $params['uf1'] = '%' . $userfilter . '%';
                 $params['uf2'] = '%' . $userfilter . '%';
                 $params['uf3'] = '%' . $userfilter . '%';
@@ -1046,7 +1046,7 @@ try {
             "SELECT l.id, l.timecreated, l.eventname, l.component, l.action, l.target, l.crud, u.username, u.firstname, u.lastname
                FROM {logstore_standard_log} l
           LEFT JOIN {user} u ON u.id = l.userid
-              WHERE l.component = :comp OR l.eventname " . $DB->sql_like('l.eventname', ':ev', false) . "
+              WHERE l.component = :comp OR " . $DB->sql_like('l.eventname', ':ev', false) . "
            ORDER BY l.id DESC",
             array('comp' => $record->component, 'ev' => '%' . $record->component . '%'),
             0,
