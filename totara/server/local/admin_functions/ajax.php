@@ -303,6 +303,7 @@ try {
             if (empty($records)) {
                 echo '<tr><td colspan="8" class="text-center py-5 text-muted font-italic">No system logs match your active filter criteria.</td></tr>';
             } else {
+                $idx = $offset + 1;
                 foreach ($records as $r) {
                     $fullname = trim($r->firstname . ' ' . $r->lastname);
                     if (empty($fullname)) {
@@ -314,7 +315,7 @@ try {
                     $badge_class = 'badge-crud-' . strtolower($r->crud);
 
                     echo '<tr>';
-                    echo '<td class="font-weight-semibold text-muted mono-cell">' . $r->id . '</td>';
+                    echo '<td class="font-weight-bold text-secondary mono-cell">#' . $idx++ . '</td>';
                     echo '<td class="text-secondary small white-space-nowrap">' . date('d M Y, h:i:s A', $r->timecreated) . '</td>';
                     echo '<td>';
                     echo '<div class="font-weight-bold text-dark" style="font-size: 13.5px;">' . s($human_event) . '</div>';

@@ -366,7 +366,7 @@ require(['jquery'], function($) {
         \$(this).addClass('active');
         \$('#btn-view-group').removeClass('active');
         currentLogViewMode = 'list';
-        \$('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
+        \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 11%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
         fetchLogs(1);
     });
 
@@ -393,7 +393,7 @@ require(['jquery'], function($) {
         \$('#btn-view-list').addClass('active');
         \$('#btn-view-group').removeClass('active');
         currentLogViewMode = 'list';
-        \$('#logs-header-tr').html('<th style=\"width: 6%\">Log ID</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 10%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
+        \$('#logs-header-tr').html('<th style=\"width: 5%\">#</th><th style=\"width: 16%\">Time Created</th><th style=\"width: 25%\">Event Description</th><th style=\"width: 13%\">Component</th><th style=\"width: 8%\" class=\"text-center\">CRUD</th><th style=\"width: 18%\">Performed By</th><th style=\"width: 11%\">IP Address</th><th style=\"width: 4%\" class=\"text-center\">View</th>');
 
         fetchLogs(1, true);
     });
@@ -756,7 +756,7 @@ $log_components = local_admin_functions_get_log_components();
                     <table class="clean-table" id="db-logs-list">
                         <thead>
                             <tr id="logs-header-tr">
-                                <th style="width: 6%">Log ID</th>
+                                <th style="width: 5%">#</th>
                                 <th style="width: 16%">Time Created</th>
                                 <th style="width: 25%">Event Description</th>
                                 <th style="width: 13%">Component</th>
