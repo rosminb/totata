@@ -460,10 +460,13 @@ require(['jquery'], function($) {
 
     // === 6. Scheduled Tasks & Cron Dashboard AJAX Engine ===
     var taskSearchTimeout = null;
+    var currentTaskPage = 1;
 
-    function fetchTasks() {
+    function fetchTasks(page, scroll) {
         var tbodyTasks = document.querySelector('#db-tasks-list tbody');
         if (!tbodyTasks) return;
+
+        currentTaskPage = page || 1;
 
         var search = \$('#task-search-input').val().trim();
         var comp   = \$('#task-component-select').val() || '';
@@ -475,7 +478,8 @@ require(['jquery'], function($) {
             action: 'fetch_tasks',
             search: search,
             component: comp,
-            status: status
+            status: status,
+            page: currentTaskPage
         });
 
         fetch(ajaxUrl + '?' + params.toString())
@@ -485,7 +489,9 @@ require(['jquery'], function($) {
                 if (res.success) {
                     tbodyTasks.innerHTML = res.html;
                     var summaryTasks = document.getElementById('tasks-summary-container');
+                    var paginationTasks = document.getElementById('tasks-pagination-container');
                     if (summaryTasks) summaryTasks.textContent = res.summary;
+                    if (paginationTasks) paginationTasks.innerHTML = res.pagination;
 
                     \$('#task-stat-total').text(res.total_count || 0);
                     \$('#task-stat-active').text(res.active_count || 0);
@@ -498,6 +504,13 @@ require(['jquery'], function($) {
                     } else {
                         \$('#cron-status-badge').html('<span class=\"badge badge-warning px-2 py-1 text-dark\"><i class=\"fa fa-exclamation-triangle mr-1\"></i> Cron Delayed / Inactive</span>');
                     }
+
+                    if (scroll) {
+                        var \$wrapper = \$('#tasks-table-wrapper');
+                        if (\$wrapper.length) {
+                            \$('html, body').animate({ scrollTop: \$wrapper.offset().top - 80 }, 200);
+                        }
+                    }
                 }
             })
             .catch(function(err) {
@@ -507,27 +520,43 @@ require(['jquery'], function($) {
     }
 
     if (\$('#tasks-dashboard-pane').is(':visible') || window.location.search.indexOf('tab=tasks') !== -1) {
-        fetchTasks();
+        fetchTasks(1);
     }
 
     \$('#task-search-input').on('input', function() {
         clearTimeout(taskSearchTimeout);
-        taskSearchTimeout = setTimeout(function() { fetchTasks(); }, 350);
+        taskSearchTimeout = setTimeout(function() { fetchTasks(1); }, 350);
     });
 
     \$('#task-component-select, #task-status-select').on('change', function() {
-        fetchTasks();
+        fetchTasks(1);
     });
 
     \$('#btn-apply-task-filters').on('click', function() {
-        fetchTasks();
+        fetchTasks(1);
     });
 
     \$('#btn-reset-task-filters').on('click', function() {
         \$('#task-search-input').val('');
         \$('#task-component-select').val('');
         \$('#task-status-select').val('');
-        fetchTasks();
+        fetchTasks(1);
+    });
+
+    \$(document).on('click', '#tasks-pagination-container a', function(e) {
+        e.preventDefault();
+        var href = \$(this).attr('href');
+        if (!href) return;
+        var page = 1;
+        try {
+            var match = href.match(/[?&;]page=(\\d+)/i);
+            if (match && match[1]) {
+                page = parseInt(match[1], 10);
+            }
+        } catch (err) {
+            page = 1;
+        }
+        fetchTasks(page, true);
     });
 
     \$(document).on('click', '#btn-copy-crontab', function(e) {
@@ -562,11 +591,11 @@ require(['jquery'], function($) {
             .then(function(res) {
                 \$btn.prop('disabled', false).html(origHtml);
                 if (res.success) {
-                    alert('⚡ Task Executed Successfully!\nDuration: ' + res.duration + '\n\nOutput:\n' + res.output);
-                    fetchTasks();
+                    alert('⚡ Task Executed Successfully!\\nDuration: ' + res.duration + '\\n\\nOutput:\\n' + res.output);
+                    fetchTasks(currentTaskPage);
                 } else {
                     alert('❌ Task Execution Failed: ' + (res.error || 'Unknown error'));
-                    fetchTasks();
+                    fetchTasks(currentTaskPage);
                 }
             })
             .catch(function(err) {
@@ -618,8 +647,8 @@ require(['jquery'], function($) {
                 fetch(ajaxUrl, { method: 'POST', body: formData })
                     .then(function(r) { return r.json(); })
                     .then(function(r) {
-                        alert(r.success ? '⚡ Task Executed!\nDuration: ' + r.duration : '❌ Task Failed: ' + r.error);
-                        fetchTasks();
+                        alert(r.success ? '⚡ Task Executed!\\nDuration: ' + r.duration : '❌ Task Failed: ' + r.error);
+                        fetchTasks(currentTaskPage);
                     });
             }
         }, 300);
@@ -662,7 +691,7 @@ require(['jquery'], function($) {
                 \$saveBtn.prop('disabled', false).html(origHtml);
                 if (res.success) {
                     \$('#task-schedule-modal').modal('hide');
-                    fetchTasks();
+                    fetchTasks(currentTaskPage);
                 } else {
                     alert('Failed to save schedule: ' + (res.error || 'Unknown error'));
                 }
@@ -1124,11 +1153,12 @@ $log_components = local_admin_functions_get_log_components();
                     </table>
                 </div>
 
-                <!-- Footer Summary Container -->
+                <!-- Footer Summary & AJAX Pagination Container -->
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 pt-2">
                     <div class="text-secondary small font-weight-medium mb-2 mb-md-0" id="tasks-summary-container">
                         Loading scheduled tasks...
                     </div>
+                    <div id="tasks-pagination-container"></div>
                 </div>
 
             </div>

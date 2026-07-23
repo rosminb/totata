@@ -885,12 +885,26 @@ try {
             $filtered_tasks[] = $t;
         }
 
+        $page      = optional_param('page', 1, PARAM_INT);
+        $perpage   = 20;
+
+        $total_filtered = count($filtered_tasks);
+        $totalpages = max(1, (int) ceil($total_filtered / $perpage));
+        if ($page < 1) $page = 1;
+        else if ($page > $totalpages) $page = $totalpages;
+
+        $offset = ($page - 1) * $perpage;
+        $page_tasks = array_slice($filtered_tasks, $offset, $perpage);
+
+        $start_index = ($total_filtered > 0) ? ($offset + 1) : 0;
+        $end_index = min($offset + count($page_tasks), $total_filtered);
+
         ob_start();
-        if (empty($filtered_tasks)) {
+        if (empty($page_tasks)) {
             echo '<tr><td colspan="9" class="text-center py-5 text-muted font-italic">No scheduled tasks match your active filter criteria.</td></tr>';
         } else {
-            $idx = 1;
-            foreach ($filtered_tasks as $t) {
+            $idx = $offset + 1;
+            foreach ($page_tasks as $t) {
                 $classname  = get_class($t);
                 $name       = $t->get_name();
                 $comp       = $t->get_component();
@@ -956,13 +970,28 @@ try {
         }
         $tasks_html = ob_get_clean();
 
+        ob_start();
+        if ($total_filtered > 0) {
+            $baseurl = new moodle_url('/local/admin_functions/index.php', array(
+                'tab' => 'tasks',
+                'search' => $search,
+                'component' => $comp_flt,
+                'status' => $st_flt
+            ));
+            echo $OUTPUT->paging_bar($total_filtered, $page, $perpage, $baseurl);
+        }
+        $pagination_html = ob_get_clean();
+
+        $summary_text = ($total_filtered > 0) ? "Showing {$start_index} to {$end_index} of " . number_format($total_filtered) . " scheduled tasks" : "Showing 0 scheduled tasks";
         $cron_healthy = ($max_last_run >= time() - (MINSECS * 5));
 
         echo json_encode(array(
             'success' => true,
             'html' => $tasks_html,
-            'summary' => "Showing " . count($filtered_tasks) . " of " . $total_tasks . " scheduled tasks",
+            'summary' => $summary_text,
+            'pagination' => $pagination_html,
             'total_count' => $total_tasks,
+            'filtered_count' => $total_filtered,
             'active_count' => $active_count,
             'disabled_count' => $disabled_count,
             'failed_count' => $failed_count,
