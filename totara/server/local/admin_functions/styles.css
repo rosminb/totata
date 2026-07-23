@@ -405,14 +405,20 @@
     color: #2563eb !important;
 }
 
-/* Bootstrap Modal z-index: ensure modals appear above Totara fixed nav */
+/* Bootstrap Modal z-index: ensure all modals appear above Totara fixed nav & backdrop */
 #table-selector-modal,
-#debug-confirm-modal {
+#debug-confirm-modal,
+#log-detail-modal,
+#task-log-modal,
+#task-schedule-modal {
     z-index: 100050 !important;
 }
 
 #table-selector-modal .modal-header,
-#debug-confirm-modal .modal-header {
+#debug-confirm-modal .modal-header,
+#log-detail-modal .modal-header,
+#task-log-modal .modal-header,
+#task-schedule-modal .modal-header {
     background-color: #0b1528 !important;
     padding: 12px 20px !important;
     min-height: auto !important;
@@ -424,7 +430,10 @@
 }
 
 #table-selector-modal .modal-header .modal-title,
-#debug-confirm-modal .modal-header .modal-title {
+#debug-confirm-modal .modal-header .modal-title,
+#log-detail-modal .modal-header .modal-title,
+#task-log-modal .modal-header .modal-title,
+#task-schedule-modal .modal-header .modal-title {
     font-size: 15px !important;
     font-weight: 600 !important;
     color: #ffffff !important;
@@ -433,13 +442,19 @@
 }
 
 #table-selector-modal .modal-header .modal-title i,
-#debug-confirm-modal .modal-header .modal-title i {
+#debug-confirm-modal .modal-header .modal-title i,
+#log-detail-modal .modal-header .modal-title i,
+#task-log-modal .modal-header .modal-title i,
+#task-schedule-modal .modal-header .modal-title i {
     color: #ffffff !important;
     font-size: 16px !important;
 }
 
 #table-selector-modal .modal-header .close,
-#debug-confirm-modal .modal-header .close {
+#debug-confirm-modal .modal-header .close,
+#log-detail-modal .modal-header .close,
+#task-log-modal .modal-header .close,
+#task-schedule-modal .modal-header .close {
     padding: 8px 12px !important;
     margin: -8px -12px -8px auto !important;
     font-size: 18px !important;
@@ -449,7 +464,10 @@
 }
 
 #table-selector-modal .modal-header .close:hover,
-#debug-confirm-modal .modal-header .close:hover {
+#debug-confirm-modal .modal-header .close:hover,
+#log-detail-modal .modal-header .close:hover,
+#task-log-modal .modal-header .close:hover,
+#task-schedule-modal .modal-header .close:hover {
     opacity: 1 !important;
     color: #ffffff !important;
 }

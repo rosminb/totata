@@ -416,7 +416,8 @@ require(['jquery'], function($) {
 
     \$(document).on('click', '.btn-view-log-detail', function(e) {
         e.preventDefault();
-        var logId = \$(this).data('log-id');
+        var \$this = \$(this);
+        var logId = \$this.attr('data-log-id') || \$this.data('log-id');
         if (!logId) return;
 
         var \$body = \$('#log-detail-modal-body');
@@ -606,8 +607,9 @@ require(['jquery'], function($) {
 
     \$(document).on('click', '.btn-view-task-log', function(e) {
         e.preventDefault();
-        var taskClass = \$(this).data('task-class');
-        var taskName = \$(this).data('task-name');
+        var \$this = \$(this);
+        var taskClass = \$this.attr('data-task-class') || \$this.data('task-class');
+        var taskName = \$this.attr('data-task-name') || \$this.data('task-name') || taskClass;
         if (!taskClass) return;
 
         \$('#task-modal-name-span').text(taskName);

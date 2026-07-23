@@ -1018,9 +1018,20 @@ try {
             exit;
         }
 
-        $record = $DB->get_record('task_scheduled', array('classname' => $task_class));
+        $possible_classes = array(
+            $task_class,
+            '\\' . ltrim($task_class, '\\'),
+            ltrim($task_class, '\\')
+        );
+
+        $record = null;
+        foreach ($possible_classes as $cls) {
+            $record = $DB->get_record('task_scheduled', array('classname' => $cls));
+            if ($record) break;
+        }
+
         if (!$record) {
-            echo json_encode(array('success' => false, 'error' => 'Scheduled task not found in database.'));
+            echo json_encode(array('success' => false, 'error' => 'Scheduled task not found in database for class: ' . s($task_class)));
             exit;
         }
 
@@ -1136,12 +1147,18 @@ try {
         $dow        = optional_param('dayofweek', '*', PARAM_TEXT);
         $disabled   = optional_param('disabled', 0, PARAM_INT);
 
-        if (empty($task_class)) {
-            echo json_encode(array('success' => false, 'error' => 'Missing task class.'));
-            exit;
+        $possible_classes = array(
+            $task_class,
+            '\\' . ltrim($task_class, '\\'),
+            ltrim($task_class, '\\')
+        );
+
+        $record = null;
+        foreach ($possible_classes as $cls) {
+            $record = $DB->get_record('task_scheduled', array('classname' => $cls));
+            if ($record) break;
         }
 
-        $record = $DB->get_record('task_scheduled', array('classname' => $task_class));
         if (!$record) {
             echo json_encode(array('success' => false, 'error' => 'Task record not found in database.'));
             exit;
