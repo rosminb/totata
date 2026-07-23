@@ -823,6 +823,324 @@ try {
             exit;
         }
 
+    } else if ($action === 'fetch_tasks') {
+        $search    = optional_param('search', '', PARAM_TEXT);
+        $comp_flt  = optional_param('component', '', PARAM_ALPHAEXT);
+        $st_flt    = optional_param('status', '', PARAM_ALPHA);
+
+        $all_tasks = \core\task\manager::get_all_scheduled_tasks();
+
+        $filtered_tasks = array();
+        $total_tasks    = count($all_tasks);
+        $active_count   = 0;
+        $disabled_count = 0;
+        $failed_count   = 0;
+        $max_last_run   = 0;
+
+        foreach ($all_tasks as $t) {
+            $classname = get_class($t);
+            $name      = $t->get_name();
+            $comp      = $t->get_component();
+            $disabled  = (bool)$t->get_disabled();
+            $faildelay = (int)$t->get_fail_delay();
+            $lastrun   = (int)$t->get_last_run_time();
+
+            if ($lastrun > $max_last_run) {
+                $max_last_run = $lastrun;
+            }
+
+            if ($disabled) {
+                $disabled_count++;
+            } else {
+                $active_count++;
+            }
+
+            if ($faildelay > 0) {
+                $failed_count++;
+            }
+
+            // Apply search filter.
+            if ($search !== '') {
+                if (stripos($name, $search) === false && stripos($classname, $search) === false && stripos($comp, $search) === false) {
+                    continue;
+                }
+            }
+
+            // Apply component filter.
+            if ($comp_flt !== '' && $comp !== $comp_flt) {
+                continue;
+            }
+
+            // Apply status filter.
+            if ($st_flt === 'active' && $disabled) {
+                continue;
+            }
+            if ($st_flt === 'disabled' && !$disabled) {
+                continue;
+            }
+            if ($st_flt === 'failed' && $faildelay == 0) {
+                continue;
+            }
+
+            $filtered_tasks[] = $t;
+        }
+
+        ob_start();
+        if (empty($filtered_tasks)) {
+            echo '<tr><td colspan="9" class="text-center py-5 text-muted font-italic">No scheduled tasks match your active filter criteria.</td></tr>';
+        } else {
+            $idx = 1;
+            foreach ($filtered_tasks as $t) {
+                $classname  = get_class($t);
+                $name       = $t->get_name();
+                $comp       = $t->get_component();
+                $disabled   = (bool)$t->get_disabled();
+                $faildelay  = (int)$t->get_fail_delay();
+                $lastrun    = (int)$t->get_last_run_time();
+                $nextrun    = (int)$t->get_next_run_time();
+                $min        = $t->get_minute();
+                $hour       = $t->get_hour();
+                $day        = $t->get_day();
+                $month      = $t->get_month();
+                $dow        = $t->get_day_of_week();
+
+                $human_sch  = local_admin_functions_human_cron_schedule($min, $hour, $day, $month, $dow);
+                $cron_expr  = "{$min} {$hour} {$day} {$month} {$dow}";
+
+                $lastrun_str = local_admin_functions_human_time_diff($lastrun);
+                $exact_lastrun = $lastrun > 0 ? date('d M Y, H:i:s', $lastrun) : 'Never executed';
+
+                // Status & Failed indicator
+                if ($disabled) {
+                    $status_badge = '<span class="badge badge-secondary px-2 py-1"><i class="fa fa-pause-circle mr-1"></i> Disabled</span>';
+                } else if ($faildelay > 0) {
+                    $status_badge = '<span class="badge badge-danger px-2 py-1"><i class="fa fa-exclamation-circle mr-1"></i> Failed</span>';
+                } else {
+                    $status_badge = '<span class="badge badge-success px-2 py-1"><i class="fa fa-check-circle mr-1"></i> OK</span>';
+                }
+
+                // Retry indicator
+                if ($faildelay > 0) {
+                    $retry_badge = '<span class="badge badge-warning text-dark px-2 py-1" title="Exponential backoff delay"><i class="fa fa-clock-o mr-1"></i> Delay: ' . local_admin_functions_format_duration($faildelay) . '</span>';
+                } else {
+                    $retry_badge = '<span class="text-muted small">No Retry</span>';
+                }
+
+                echo '<tr>';
+                echo '<td class="font-weight-bold text-secondary mono-cell">#' . $idx++ . '</td>';
+                echo '<td>';
+                echo '<div class="font-weight-bold text-dark" style="font-size: 13.5px;">' . s($name) . '</div>';
+                echo '<div class="small text-muted font-monospace text-truncate" style="max-width: 320px;" title="\\' . s($classname) . '">\\' . s($classname) . '</div>';
+                echo '</td>';
+                echo '<td><span class="badge badge-light border text-secondary font-weight-normal">' . s($comp) . '</span></td>';
+                echo '<td>';
+                echo '<div class="font-weight-medium text-dark small">' . s($human_sch) . '</div>';
+                echo '<div class="font-monospace small text-muted"><code>' . s($cron_expr) . '</code></div>';
+                echo '</td>';
+                echo '<td>';
+                echo '<div class="font-weight-bold text-dark small">' . s($lastrun_str) . '</div>';
+                echo '<div class="small text-muted font-size-11">' . s($exact_lastrun) . '</div>';
+                echo '</td>';
+                echo '<td><span class="badge badge-light border text-dark font-weight-medium">' . local_admin_functions_format_duration($faildelay > 0 ? $faildelay : null) . '</span></td>';
+                echo '<td>' . $status_badge . '</td>';
+                echo '<td>' . $retry_badge . '</td>';
+                echo '<td class="text-center">';
+                echo '<div class="btn-group btn-group-sm" role="group">';
+                echo '<button type="button" class="btn btn-outline-primary btn-run-task-now" data-task-class="' . s($classname) . '" data-task-name="' . s($name) . '" title="Execute Task Now (⚡)"><i class="fa fa-bolt"></i> Run</button>';
+                echo '<button type="button" class="btn btn-outline-info btn-view-task-log" data-task-class="' . s($classname) . '" data-task-name="' . s($name) . '" title="View Log & History Details"><i class="fa fa-eye"></i> Logs</button>';
+                echo '<button type="button" class="btn btn-outline-secondary btn-edit-task-schedule" data-task-class="' . s($classname) . '" data-task-name="' . s($name) . '" data-minute="' . s($min) . '" data-hour="' . s($hour) . '" data-day="' . s($day) . '" data-month="' . s($month) . '" data-dayofweek="' . s($dow) . '" data-disabled="' . ($disabled ? '1' : '0') . '" title="Edit Task Schedule"><i class="fa fa-pencil"></i></button>';
+                echo '</div>';
+                echo '</td>';
+                echo '</tr>';
+            }
+        }
+        $tasks_html = ob_get_clean();
+
+        $cron_healthy = ($max_last_run >= time() - (MINSECS * 5));
+
+        echo json_encode(array(
+            'success' => true,
+            'html' => $tasks_html,
+            'summary' => "Showing " . count($filtered_tasks) . " of " . $total_tasks . " scheduled tasks",
+            'total_count' => $total_tasks,
+            'active_count' => $active_count,
+            'disabled_count' => $disabled_count,
+            'failed_count' => $failed_count,
+            'cron_healthy' => $cron_healthy,
+            'last_cron_str' => local_admin_functions_human_time_diff($max_last_run)
+        ));
+        exit;
+
+    } else if ($action === 'run_task_now') {
+        $task_class = optional_param('task_class', '', PARAM_RAW);
+        if (empty($task_class)) {
+            echo json_encode(array('success' => false, 'error' => 'Missing task class parameter.'));
+            exit;
+        }
+
+        $res = local_admin_functions_run_task_now($task_class);
+        echo json_encode($res);
+        exit;
+
+    } else if ($action === 'fetch_task_log') {
+        $task_class = optional_param('task_class', '', PARAM_RAW);
+        if (empty($task_class)) {
+            echo json_encode(array('success' => false, 'error' => 'Missing task class parameter.'));
+            exit;
+        }
+
+        $record = $DB->get_record('task_scheduled', array('classname' => $task_class));
+        if (!$record) {
+            echo json_encode(array('success' => false, 'error' => 'Scheduled task not found in database.'));
+            exit;
+        }
+
+        $task = \core\task\manager::scheduled_task_from_record($record);
+        if (!$task) {
+            echo json_encode(array('success' => false, 'error' => 'Could not instantiate task class.'));
+            exit;
+        }
+
+        // Fetch recent logstore entries related to task execution.
+        $recent_logs = $DB->get_records_sql(
+            "SELECT l.id, l.timecreated, l.eventname, l.component, l.action, l.target, l.crud, u.username, u.firstname, u.lastname
+               FROM {logstore_standard_log} l
+          LEFT JOIN {user} u ON u.id = l.userid
+              WHERE l.component = :comp OR l.eventname " . $DB->sql_like('l.eventname', ':ev', false) . "
+           ORDER BY l.id DESC",
+            array('comp' => $record->component, 'ev' => '%' . $record->component . '%'),
+            0,
+            15
+        );
+
+        ob_start();
+        ?>
+        <div class="task-log-details">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded border">
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Task Class Namespace</label>
+                        <code class="text-primary font-weight-bold font-size-13 d-block mb-2">\\<?php echo s($record->classname); ?></code>
+                        
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Component</label>
+                        <span class="badge badge-primary px-2 py-1 mb-2"><?php echo s($record->component); ?></span>
+
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Current Schedule</label>
+                        <div class="font-weight-bold text-dark mb-1"><?php echo s(local_admin_functions_human_cron_schedule($record->minute, $record->hour, $record->day, $record->month, $record->dayofweek)); ?></div>
+                        <code class="bg-white border px-2 py-1 rounded d-inline-block small text-muted"><?php echo s("{$record->minute} {$record->hour} {$record->day} {$record->month} {$record->dayofweek}"); ?></code>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded border">
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Last Execution Time</label>
+                        <div class="font-weight-bold text-dark mb-2">
+                            <i class="fa fa-history text-info mr-1"></i>
+                            <?php echo s(local_admin_functions_human_time_diff($record->lastruntime)); ?>
+                            <span class="text-muted small font-weight-normal">(<?php echo $record->lastruntime ? date('Y-m-d H:i:s', $record->lastruntime) : 'Never'; ?>)</span>
+                        </div>
+
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Next Scheduled Execution</label>
+                        <div class="font-weight-bold text-dark mb-2">
+                            <i class="fa fa-clock-o text-warning mr-1"></i>
+                            <?php echo s(local_admin_functions_human_time_diff($record->nextruntime)); ?>
+                            <span class="text-muted small font-weight-normal">(<?php echo $record->nextruntime ? date('Y-m-d H:i:s', $record->nextruntime) : 'ASAP'; ?>)</span>
+                        </div>
+
+                        <label class="text-secondary font-weight-bold small text-uppercase d-block mb-1">Failure Status & Backoff Delay</label>
+                        <?php if ($record->faildelay > 0): ?>
+                            <div class="alert alert-danger p-2 mb-0 font-weight-bold small">
+                                <i class="fa fa-warning mr-1"></i> Task Failed! Fail Delay: <?php echo local_admin_functions_format_duration($record->faildelay); ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-success p-2 mb-0 font-weight-bold small">
+                                <i class="fa fa-check-circle mr-1"></i> Health OK — No failure delay detected.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <h6 class="font-weight-bold text-dark mb-2"><i class="fa fa-list-alt text-primary mr-1"></i> Component Log Audit Trail (Last 15 Events)</h6>
+            <div class="table-responsive bg-white border rounded mb-0">
+                <table class="table table-sm table-hover m-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Time</th>
+                            <th>Event Description</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($recent_logs)): ?>
+                            <tr><td colspan="4" class="text-center py-4 text-muted font-italic">No recent log events found for component <?php echo s($record->component); ?>.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($recent_logs as $l): ?>
+                                <tr>
+                                    <td class="mono-cell font-weight-bold small">#<?php echo $l->id; ?></td>
+                                    <td class="small text-secondary"><?php echo date('d M H:i:s', $l->timecreated); ?></td>
+                                    <td class="small">
+                                        <div class="font-weight-bold text-dark"><?php echo s(local_admin_functions_human_event_name($l->eventname, $l->target, $l->action, $l->component)); ?></div>
+                                        <div class="text-muted font-monospace font-size-11"><?php echo s($l->eventname); ?></div>
+                                    </td>
+                                    <td class="small"><?php echo s(trim($l->firstname . ' ' . $l->lastname) ?: $l->username ?: 'CLI'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php
+        $modal_html = ob_get_clean();
+
+        echo json_encode(array('success' => true, 'html' => $modal_html, 'title' => $task->get_name()));
+        exit;
+
+    } else if ($action === 'save_task_schedule') {
+        $task_class = optional_param('task_class', '', PARAM_RAW);
+        $min        = optional_param('minute', '*', PARAM_TEXT);
+        $hour       = optional_param('hour', '*', PARAM_TEXT);
+        $day        = optional_param('day', '*', PARAM_TEXT);
+        $month      = optional_param('month', '*', PARAM_TEXT);
+        $dow        = optional_param('dayofweek', '*', PARAM_TEXT);
+        $disabled   = optional_param('disabled', 0, PARAM_INT);
+
+        if (empty($task_class)) {
+            echo json_encode(array('success' => false, 'error' => 'Missing task class.'));
+            exit;
+        }
+
+        $record = $DB->get_record('task_scheduled', array('classname' => $task_class));
+        if (!$record) {
+            echo json_encode(array('success' => false, 'error' => 'Task record not found in database.'));
+            exit;
+        }
+
+        $task = \core\task\manager::scheduled_task_from_record($record);
+        if (!$task) {
+            echo json_encode(array('success' => false, 'error' => 'Could not instantiate task class.'));
+            exit;
+        }
+
+        $task->set_minute($min);
+        $task->set_hour($hour);
+        $task->set_day($day);
+        $task->set_month($month);
+        $task->set_day_of_week($dow);
+        $task->set_disabled($disabled ? true : false);
+        $task->set_customised(true);
+
+        try {
+            \core\task\manager::configure_scheduled_task($task);
+            echo json_encode(array('success' => true, 'message' => 'Task schedule updated successfully!'));
+            exit;
+        } catch (\Exception $e) {
+            echo json_encode(array('success' => false, 'error' => 'Failed to save schedule: ' . $e->getMessage()));
+            exit;
+        }
+
     } else {
         echo json_encode(array('success' => false, 'error' => 'Invalid action.'));
         exit;

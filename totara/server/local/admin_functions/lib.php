@@ -457,3 +457,169 @@ function local_admin_functions_export_logs_csv($search = '', $crud = '', $compon
     exit;
 }
 
+/**
+ * Format timestamp into human-readable relative time string (e.g. "5 mins ago", "2 hours ago", "Never").
+ *
+ * @param int $timestamp
+ * @return string
+ */
+function local_admin_functions_human_time_diff($timestamp) {
+    if (empty($timestamp) || $timestamp <= 0) {
+        return 'Never';
+    }
+    $diff = time() - $timestamp;
+    if ($diff < 0) {
+        // Future timestamp
+        $abs = abs($diff);
+        if ($abs < 60) return 'In a few seconds';
+        if ($abs < 3600) return 'In ' . round($abs / 60) . ' mins';
+        if ($abs < 86400) return 'In ' . round($abs / 3600) . ' hours';
+        return 'In ' . round($abs / 86400) . ' days';
+    }
+    if ($diff < 10) return 'Just now';
+    if ($diff < 60) return $diff . ' secs ago';
+    if ($diff < 3600) return round($diff / 60) . ' mins ago';
+    if ($diff < 86400) return round($diff / 3600) . ' hours ago';
+    if ($diff < 604800) return round($diff / 86400) . ' days ago';
+    return date('d M Y, H:i', $timestamp);
+}
+
+/**
+ * Format cron schedule parameters into a clean human-readable sentence.
+ *
+ * @param string $min
+ * @param string $hour
+ * @param string $day
+ * @param string $month
+ * @param string $dow
+ * @return string
+ */
+function local_admin_functions_human_cron_schedule($min, $hour, $day, $month, $dow) {
+    if ($min === '*' && $hour === '*' && $day === '*' && $month === '*' && $dow === '*') {
+        return 'Every minute (*)';
+    }
+    if (strpos($min, '*/') === 0 && $hour === '*') {
+        $interval = substr($min, 2);
+        return "Every {$interval} mins";
+    }
+    if ($min === '0' && $hour === '*') {
+        return 'Hourly at :00';
+    }
+    if (is_numeric($min) && is_numeric($hour) && $day === '*' && $month === '*' && $dow === '*') {
+        $formatted_h = sprintf('%02d', $hour);
+        $formatted_m = sprintf('%02d', $min);
+        return "Daily at {$formatted_h}:{$formatted_m}";
+    }
+    if (is_numeric($min) && is_numeric($hour) && $dow !== '*') {
+        $days_map = array('0'=>'Sun', '1'=>'Mon', '2'=>'Tue', '3'=>'Wed', '4'=>'Thu', '5'=>'Fri', '6'=>'Sat', '7'=>'Sun');
+        $day_name = isset($days_map[$dow]) ? $days_map[$dow] : "Day {$dow}";
+        $formatted_h = sprintf('%02d', $hour);
+        $formatted_m = sprintf('%02d', $min);
+        return "Weekly ({$day_name} at {$formatted_h}:{$formatted_m})";
+    }
+    return "{$min} {$hour} {$day} {$month} {$dow}";
+}
+
+/**
+ * Format duration in seconds into clean human string (e.g. 1.25s, 450ms).
+ *
+ * @param float $seconds
+ * @return string
+ */
+function local_admin_functions_format_duration($seconds) {
+    if ($seconds === null || $seconds < 0) {
+        return 'N/A';
+    }
+    if ($seconds < 0.001) {
+        return '< 1ms';
+    }
+    if ($seconds < 1) {
+        return round($seconds * 1000) . 'ms';
+    }
+    if ($seconds < 60) {
+        return number_format($seconds, 2) . 's';
+    }
+    $m = floor($seconds / 60);
+    $s = round(fmod($seconds, 60));
+    return "{$m}m {$s}s";
+}
+
+/**
+ * Execute a scheduled task on demand via PHP backend dispatcher.
+ *
+ * @param string $classname Task class name namespace
+ * @return array Result array with status, output, duration, and time.
+ */
+function local_admin_functions_run_task_now($classname) {
+    global $DB;
+
+    // Safety check - verify task exists in DB.
+    $record = $DB->get_record('task_scheduled', array('classname' => $classname));
+    if (!$record) {
+        return array('success' => false, 'error' => 'Task not found in database.');
+    }
+
+    $task = \core\task\manager::scheduled_task_from_record($record);
+    if (!$task) {
+        return array('success' => false, 'error' => 'Unable to instantiate task class.');
+    }
+
+    // Capture execution logs and duration.
+    ob_start();
+    $start_time = microtime(true);
+    $error_msg = null;
+
+    try {
+        // Execute the task.
+        $task->execute();
+        // Clear faildelay on successful manual run.
+        \core\task\manager::scheduled_task_complete($task);
+    } catch (\Throwable $e) {
+        $error_msg = $e->getMessage();
+        \core\task\manager::scheduled_task_failed($task);
+    } catch (\Exception $e) {
+        $error_msg = $e->getMessage();
+        \core\task\manager::scheduled_task_failed($task);
+    }
+
+    $duration = microtime(true) - $start_time;
+    $output = ob_get_clean();
+
+    // Log the manual execution in logstore_standard_log for audit trail.
+    try {
+        $event = \core\event\config_log_created::create(array(
+            'objectid' => $record->id,
+            'context' => context_system::instance(),
+            'other' => array(
+                'name' => 'manual_task_run',
+                'plugin' => 'local_admin_functions',
+                'task' => $classname,
+                'duration' => round($duration, 3),
+                'status' => $error_msg ? 'failed' : 'success'
+            )
+        ));
+        $event->trigger();
+    } catch (\Exception $e) {
+        // Silently continue if log creation fails.
+    }
+
+    if ($error_msg !== null) {
+        return array(
+            'success' => false,
+            'error' => $error_msg,
+            'output' => $output,
+            'duration' => local_admin_functions_format_duration($duration),
+            'duration_sec' => round($duration, 3)
+        );
+    }
+
+    return array(
+        'success' => true,
+        'message' => 'Task executed successfully.',
+        'output' => $output ? $output : 'Task executed cleanly with no output.',
+        'duration' => local_admin_functions_format_duration($duration),
+        'duration_sec' => round($duration, 3)
+    );
+}
+
+

@@ -28,7 +28,7 @@ $scope   = optional_param('scope', 'custom', PARAM_ALPHA);
 $sql     = trim(optional_param('sql', '', PARAM_RAW));
 $perpage = 100;
 
-$allowed_tabs = array('tables', 'logs', 'sql');
+$allowed_tabs = array('tables', 'logs', 'tasks', 'sql');
 if (!in_array($tab, $allowed_tabs)) {
     $tab = 'tables';
 }
@@ -458,6 +458,221 @@ require(['jquery'], function($) {
         window.location.href = ajaxUrl + '?' + params.toString();
     });
 
+    // === 6. Scheduled Tasks & Cron Dashboard AJAX Engine ===
+    var taskSearchTimeout = null;
+
+    function fetchTasks() {
+        var tbodyTasks = document.querySelector('#db-tasks-list tbody');
+        if (!tbodyTasks) return;
+
+        var search = \$('#task-search-input').val().trim();
+        var comp   = \$('#task-component-select').val() || '';
+        var status = \$('#task-status-select').val() || '';
+
+        \$(tbodyTasks).css('opacity', '0.4');
+
+        var params = new URLSearchParams({
+            action: 'fetch_tasks',
+            search: search,
+            component: comp,
+            status: status
+        });
+
+        fetch(ajaxUrl + '?' + params.toString())
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                \$(tbodyTasks).css('opacity', '1');
+                if (res.success) {
+                    tbodyTasks.innerHTML = res.html;
+                    var summaryTasks = document.getElementById('tasks-summary-container');
+                    if (summaryTasks) summaryTasks.textContent = res.summary;
+
+                    \$('#task-stat-total').text(res.total_count || 0);
+                    \$('#task-stat-active').text(res.active_count || 0);
+                    \$('#task-stat-disabled').text(res.disabled_count || 0);
+                    \$('#task-stat-failed').text(res.failed_count || 0);
+
+                    \$('#cron-last-time-str').text(res.last_cron_str || 'Unknown');
+                    if (res.cron_healthy) {
+                        \$('#cron-status-badge').html('<span class=\"badge badge-success px-2 py-1\"><i class=\"fa fa-check-circle mr-1\"></i> Cron Active</span>');
+                    } else {
+                        \$('#cron-status-badge').html('<span class=\"badge badge-warning px-2 py-1 text-dark\"><i class=\"fa fa-exclamation-triangle mr-1\"></i> Cron Delayed / Inactive</span>');
+                    }
+                }
+            })
+            .catch(function(err) {
+                \$(tbodyTasks).css('opacity', '1');
+                console.error('AJAX Fetch Tasks Error:', err);
+            });
+    }
+
+    if (\$('#tasks-dashboard-pane').is(':visible') || window.location.search.indexOf('tab=tasks') !== -1) {
+        fetchTasks();
+    }
+
+    \$('#task-search-input').on('input', function() {
+        clearTimeout(taskSearchTimeout);
+        taskSearchTimeout = setTimeout(function() { fetchTasks(); }, 350);
+    });
+
+    \$('#task-component-select, #task-status-select').on('change', function() {
+        fetchTasks();
+    });
+
+    \$('#btn-apply-task-filters').on('click', function() {
+        fetchTasks();
+    });
+
+    \$('#btn-reset-task-filters').on('click', function() {
+        \$('#task-search-input').val('');
+        \$('#task-component-select').val('');
+        \$('#task-status-select').val('');
+        fetchTasks();
+    });
+
+    \$(document).on('click', '#btn-copy-crontab', function(e) {
+        e.preventDefault();
+        var cmdText = \$('#crontab-cmd-text').text();
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(cmdText).then(function() {
+                var \$btn = \$('#btn-copy-crontab');
+                var orig = \$btn.html();
+                \$btn.html('<i class=\"fa fa-check mr-1\"></i> Copied!').addClass('bg-success');
+                setTimeout(function() { \$btn.html(orig).removeClass('bg-success'); }, 2000);
+            });
+        }
+    });
+
+    \$(document).on('click', '.btn-run-task-now', function(e) {
+        e.preventDefault();
+        var \$btn = \$(this);
+        var taskClass = \$btn.data('task-class');
+        var taskName = \$btn.data('task-name') || taskClass;
+        if (!taskClass) return;
+
+        var origHtml = \$btn.html();
+        \$btn.prop('disabled', true).html('<i class=\"fa fa-spinner fa-spin\"></i> Running...');
+
+        var formData = new FormData();
+        formData.append('action', 'run_task_now');
+        formData.append('task_class', taskClass);
+
+        fetch(ajaxUrl, { method: 'POST', body: formData })
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                \$btn.prop('disabled', false).html(origHtml);
+                if (res.success) {
+                    alert('⚡ Task Executed Successfully!\nDuration: ' + res.duration + '\n\nOutput:\n' + res.output);
+                    fetchTasks();
+                } else {
+                    alert('❌ Task Execution Failed: ' + (res.error || 'Unknown error'));
+                    fetchTasks();
+                }
+            })
+            .catch(function(err) {
+                \$btn.prop('disabled', false).html(origHtml);
+                alert('An error occurred while attempting to run task.');
+            });
+    });
+
+    \$(document).on('click', '.btn-view-task-log', function(e) {
+        e.preventDefault();
+        var taskClass = \$(this).data('task-class');
+        var taskName = \$(this).data('task-name');
+        if (!taskClass) return;
+
+        \$('#task-modal-name-span').text(taskName);
+        \$('#task-modal-btn-run-now').data('task-class', taskClass).data('task-name', taskName);
+
+        var \$body = \$('#task-log-modal-body');
+        \$body.html('<div class=\"text-center py-5 text-muted\"><i class=\"fa fa-spinner fa-spin fa-2x mr-2\"></i> Loading task logs...</div>');
+        \$('#task-log-modal').modal('show');
+
+        fetch(ajaxUrl + '?action=fetch_task_log&task_class=' + encodeURIComponent(taskClass))
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    \$body.html(res.html);
+                } else {
+                    \$body.html('<div class=\"alert alert-danger m-3\">' + (res.error || 'Failed to load task logs.') + '</div>');
+                }
+            })
+            .catch(function(err) {
+                \$body.html('<div class=\"alert alert-danger m-3\">An error occurred while loading task logs.</div>');
+            });
+    });
+
+    \$(document).on('click', '#task-modal-btn-run-now', function(e) {
+        e.preventDefault();
+        var taskClass = \$(this).data('task-class');
+        if (!taskClass) return;
+        \$('#task-log-modal').modal('hide');
+        setTimeout(function() {
+            var \$targetBtn = \$('.btn-run-task-now[data-task-class=\"' + taskClass + '\"]');
+            if (\$targetBtn.length) {
+                \$targetBtn.trigger('click');
+            } else {
+                var formData = new FormData();
+                formData.append('action', 'run_task_now');
+                formData.append('task_class', taskClass);
+                fetch(ajaxUrl, { method: 'POST', body: formData })
+                    .then(function(r) { return r.json(); })
+                    .then(function(r) {
+                        alert(r.success ? '⚡ Task Executed!\nDuration: ' + r.duration : '❌ Task Failed: ' + r.error);
+                        fetchTasks();
+                    });
+            }
+        }, 300);
+    });
+
+    \$(document).on('click', '.btn-edit-task-schedule', function(e) {
+        e.preventDefault();
+        var \$btn = \$(this);
+        \$('#task-edit-class').val(\$btn.data('task-class'));
+        \$('#task-edit-name-display').text(\$btn.data('task-name'));
+        \$('#task-edit-class-display').text('\\\\' + \$btn.data('task-class'));
+        \$('#task-edit-min').val(\$btn.data('minute'));
+        \$('#task-edit-hour').val(\$btn.data('hour'));
+        \$('#task-edit-day').val(\$btn.data('day'));
+        \$('#task-edit-month').val(\$btn.data('month'));
+        \$('#task-edit-dow').val(\$btn.data('dayofweek'));
+        \$('#task-edit-disabled').prop('checked', \$btn.data('disabled') === '1' || \$btn.data('disabled') === 1);
+        \$('#task-schedule-modal').modal('show');
+    });
+
+    \$('#task-schedule-form').on('submit', function(e) {
+        e.preventDefault();
+        var \$saveBtn = \$('#btn-save-task-schedule');
+        var origHtml = \$saveBtn.html();
+        \$saveBtn.prop('disabled', true).html('<i class=\"fa fa-spinner fa-spin\"></i> Saving...');
+
+        var formData = new FormData();
+        formData.append('action', 'save_task_schedule');
+        formData.append('task_class', \$('#task-edit-class').val());
+        formData.append('minute', \$('#task-edit-min').val());
+        formData.append('hour', \$('#task-edit-hour').val());
+        formData.append('day', \$('#task-edit-day').val());
+        formData.append('month', \$('#task-edit-month').val());
+        formData.append('dayofweek', \$('#task-edit-dow').val());
+        formData.append('disabled', \$('#task-edit-disabled').is(':checked') ? 1 : 0);
+
+        fetch(ajaxUrl, { method: 'POST', body: formData })
+            .then(function(res) { return res.json(); })
+            .then(function(res) {
+                \$saveBtn.prop('disabled', false).html(origHtml);
+                if (res.success) {
+                    \$('#task-schedule-modal').modal('hide');
+                    fetchTasks();
+                } else {
+                    alert('Failed to save schedule: ' + (res.error || 'Unknown error'));
+                }
+            })
+            .catch(function(err) {
+                \$saveBtn.prop('disabled', false).html(origHtml);
+                alert('An error occurred while saving schedule.');
+            });
+    });
+
 });
 ", true);
 
@@ -552,6 +767,11 @@ $log_components = local_admin_functions_get_log_components();
             <li class="nav-item">
                 <a class="nav-link <?php echo ($tab === 'logs') ? 'active' : ''; ?>" href="index.php?tab=logs">
                     <i class="fa fa-history mr-1"></i> Log Explorer
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo ($tab === 'tasks') ? 'active' : ''; ?>" href="index.php?tab=tasks">
+                    <i class="fa fa-tasks mr-1"></i> Tasks &amp; Cron
                 </a>
             </li>
             <li class="nav-item">
@@ -782,7 +1002,138 @@ $log_components = local_admin_functions_get_log_components();
 
             </div>
 
-            <!-- Pane 3: SQL Query Runner with Detailed Errors -->
+            <!-- Pane 3: Scheduled Tasks & Cron Dashboard -->
+            <div class="tab-pane" id="tasks-dashboard-pane" role="tabpanel" style="display: <?php echo ($tab === 'tasks') ? 'block' : 'none'; ?>;">
+                
+                <!-- Crontab Setup Banner & System Health Card -->
+                <div class="cron-setup-card mb-4">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h5 class="font-weight-bold text-white mb-0" style="font-size: 16px;">
+                                    <i class="fa fa-terminal text-info mr-2"></i> Crontab Setup &amp; Cron Manager
+                                </h5>
+                                <div id="cron-status-badge">
+                                    <span class="badge badge-success px-2 py-1"><i class="fa fa-check-circle mr-1"></i> Cron Active</span>
+                                </div>
+                            </div>
+                            <p class="text-slate-300 small mb-0" style="color: #94a3b8;">
+                                Configure system crontab (`crontab -e`) to execute Totara background jobs every minute.
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-muted small mr-2">Last Cron Execution:</span>
+                            <strong id="cron-last-time-str" class="text-info small">Checking...</strong>
+                        </div>
+                    </div>
+
+                    <div class="cron-code-box">
+                        <code id="crontab-cmd-text">* * * * * /usr/bin/php <?php echo s(realpath($CFG->dirroot . '/admin/cli/cron.php')); ?> &gt;/dev/null 2&gt;&amp;1</code>
+                        <button type="button" class="btn-copy-cron" id="btn-copy-crontab">
+                            <i class="fa fa-copy mr-1"></i> Copy Crontab Command
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Task Stats Overview Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+                        <div class="task-stat-card">
+                            <div class="task-stat-icon primary"><i class="fa fa-tasks"></i></div>
+                            <div>
+                                <div class="text-muted small font-weight-medium">Total Tasks</div>
+                                <div class="h4 font-weight-bold text-dark mb-0" id="task-stat-total">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+                        <div class="task-stat-card">
+                            <div class="task-stat-icon success"><i class="fa fa-play-circle"></i></div>
+                            <div>
+                                <div class="text-muted small font-weight-medium">Active Tasks</div>
+                                <div class="h4 font-weight-bold text-success mb-0" id="task-stat-active">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+                        <div class="task-stat-card">
+                            <div class="task-stat-icon warning"><i class="fa fa-pause-circle"></i></div>
+                            <div>
+                                <div class="text-muted small font-weight-medium">Disabled Tasks</div>
+                                <div class="h4 font-weight-bold text-warning mb-0" id="task-stat-disabled">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="task-stat-card">
+                            <div class="task-stat-icon danger"><i class="fa fa-exclamation-triangle"></i></div>
+                            <div>
+                                <div class="text-muted small font-weight-medium">Failed Tasks</div>
+                                <div class="h4 font-weight-bold text-danger mb-0" id="task-stat-failed">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Filter Bar Toolbar -->
+                <div class="filter-bar-single mb-4">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="task-search-input" class="form-control" placeholder="Search task name or class..." autocomplete="off">
+                    </div>
+
+                    <select id="task-component-select" class="custom-select filter-select" style="min-width: 160px;">
+                        <option value="">All Components</option>
+                        <?php foreach ($log_components as $comp): ?>
+                            <option value="<?php echo s($comp); ?>"><?php echo s($comp); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <select id="task-status-select" class="custom-select filter-select font-weight-bold" style="min-width: 140px; color: #2563eb;">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active Only</option>
+                        <option value="disabled">Disabled Only</option>
+                        <option value="failed">Failed Only</option>
+                    </select>
+
+                    <button type="button" class="btn btn-filter-action" id="btn-apply-task-filters">
+                        <i class="fa fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-reset-action" id="btn-reset-task-filters">Reset</button>
+                </div>
+
+                <!-- Scheduled Tasks Table Container -->
+                <div class="clean-table-container mb-3" id="tasks-table-wrapper">
+                    <table class="clean-table" id="db-tasks-list">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%">#</th>
+                                <th style="width: 26%">Task Name &amp; Namespace</th>
+                                <th style="width: 12%">Component</th>
+                                <th style="width: 15%">Schedule</th>
+                                <th style="width: 14%">Last Run</th>
+                                <th style="width: 8%">Duration</th>
+                                <th style="width: 7%">Failed</th>
+                                <th style="width: 8%">Retry</th>
+                                <th style="width: 11%" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer Summary Container -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 pt-2">
+                    <div class="text-secondary small font-weight-medium mb-2 mb-md-0" id="tasks-summary-container">
+                        Loading scheduled tasks...
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Pane 4: SQL Query Runner with Detailed Errors -->
             <div class="tab-pane" id="sql-runner-pane" role="tabpanel" style="display: <?php echo ($tab === 'sql') ? 'block' : 'none'; ?>;">
                 <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #f8fafc;">
                     <div class="card-body p-4">
@@ -1077,6 +1428,101 @@ $log_components = local_admin_functions_get_log_components();
             <div class="modal-footer bg-light py-3 px-4">
                 <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Close</button>
             </div>
+        </div>
+    </div>
+<!-- ============================================================
+     Bootstrap 4 Modal: Task Log & History Inspector
+     ============================================================ -->
+<div class="modal fade" id="task-log-modal"
+     tabindex="-1" role="dialog"
+     aria-labelledby="taskLogModalLabel" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="background: #0b1528; padding: 12px 20px;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="taskLogModalLabel" style="font-size: 15px; color: #ffffff;">
+                    <i class="fa fa-terminal mr-2 text-white"></i> Task Logs &amp; Execution Details: <span id="task-modal-name-span" class="ml-1 text-info"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="color: #ffffff; opacity: 0.9; font-size: 18px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4 text-dark" id="task-log-modal-body" style="font-size: 14px;">
+                <div class="text-center py-5 text-muted"><i class="fa fa-spinner fa-spin fa-2x mr-2"></i> Loading task log details...</div>
+            </div>
+            <div class="modal-footer bg-light py-3 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-primary font-weight-bold" id="task-modal-btn-run-now">
+                    <i class="fa fa-bolt mr-1"></i> Run Task Now
+                </button>
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     Bootstrap 4 Modal: Edit Scheduled Task Schedule
+     ============================================================ -->
+<div class="modal fade" id="task-schedule-modal"
+     tabindex="-1" role="dialog"
+     aria-labelledby="taskScheduleModalLabel" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="background: #0b1528; padding: 12px 20px;">
+                <h5 class="modal-title font-weight-bold d-flex align-items-center mb-0" id="taskScheduleModalLabel" style="font-size: 15px; color: #ffffff;">
+                    <i class="fa fa-pencil mr-2 text-white"></i> Edit Task Schedule
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="color: #ffffff; opacity: 0.9; font-size: 18px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="task-schedule-form">
+                <input type="hidden" id="task-edit-class" name="task_class">
+                <div class="modal-body p-4 text-dark" style="font-size: 14px;">
+                    <div class="alert alert-light border mb-3">
+                        <strong class="text-dark d-block mb-1" id="task-edit-name-display">Scheduled Task Name</strong>
+                        <code class="small text-muted font-monospace d-block" id="task-edit-class-display">\class\name</code>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="font-weight-bold small text-secondary">Minute (0-59 or *)</label>
+                            <input type="text" class="form-control font-monospace" id="task-edit-min" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="font-weight-bold small text-secondary">Hour (0-23 or *)</label>
+                            <input type="text" class="form-control font-monospace" id="task-edit-hour" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-4 mb-3">
+                            <label class="font-weight-bold small text-secondary">Day (1-31 or *)</label>
+                            <input type="text" class="form-control font-monospace" id="task-edit-day" required>
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="font-weight-bold small text-secondary">Month (1-12 or *)</label>
+                            <input type="text" class="form-control font-monospace" id="task-edit-month" required>
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="font-weight-bold small text-secondary">Day of Week (0-6)</label>
+                            <input type="text" class="form-control font-monospace" id="task-edit-dow" required>
+                        </div>
+                    </div>
+
+                    <div class="custom-control custom-checkbox mt-2">
+                        <input type="checkbox" class="custom-control-input" id="task-edit-disabled">
+                        <label class="custom-control-label font-weight-bold text-danger" for="task-edit-disabled">
+                            Disable Task (Do not run from Cron)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-3 px-4 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 font-weight-bold" id="btn-save-task-schedule">
+                        <i class="fa fa-save mr-1"></i> Save Schedule
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
